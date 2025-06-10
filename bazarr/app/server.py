@@ -3,11 +3,10 @@
 import signal
 import warnings
 import logging
-import errno
-from literals import EXIT_INTERRUPT, EXIT_NORMAL, EXIT_PORT_ALREADY_IN_USE_ERROR
-from utilities.central import restart_bazarr, stop_bazarr
+import cherrypy
 
-from waitress.server import create_server
+from literals import EXIT_INTERRUPT, EXIT_NORMAL
+from utilities.central import restart_bazarr, stop_bazarr
 from time import sleep
 
 from api import api_bp
@@ -32,6 +31,7 @@ class Server:
         warnings.simplefilter("ignore", BrokenPipeError)
 
         self.server = None
+        self.server6 = None
         self.connected = False
         self.address = str(settings.general.ip)
         self.port = int(args.port) if args.port else int(settings.general.port)
@@ -42,60 +42,56 @@ class Server:
             self.configure_server()
 
     def configure_server(self):
-        try:
-            self.server = create_server(app,
-                                        host=self.address,
-                                        port=self.port,
-                                        threads=100)
-            self.connected = True
-        except OSError as error:
-            if error.errno == errno.EADDRNOTAVAIL:
-                logging.exception("BAZARR cannot bind to specified IP, trying with 0.0.0.0")
-                self.address = '0.0.0.0'
-                self.connected = False
-                super(Server, self).__init__()
-            elif error.errno == errno.EADDRINUSE:
-                if self.port != '6767':
-                    logging.exception("BAZARR cannot bind to specified TCP port, trying with default (6767)")
-                    self.port = '6767'
-                    self.connected = False
-                    super(Server, self).__init__()
-                else:
-                    logging.exception("BAZARR cannot bind to default TCP port (6767) because it's already in use, "
-                                      "exiting...")
-                    self.shutdown(EXIT_PORT_ALREADY_IN_USE_ERROR)
-            elif error.errno in [errno.ENOLINK, errno.EAFNOSUPPORT]:
-                logging.exception("BAZARR cannot bind to IPv6 (*), trying with 0.0.0.0")
-                self.address = '0.0.0.0'
-                self.connected = False
-                super(Server, self).__init__()
-            else:
-                logging.exception("BAZARR cannot start because of unhandled exception.")
-                self.shutdown()
+        cherrypy.config.update({'log.screen': False, 'log.access_file': '', 'log.error_file': ''})
+        cherrypy.config.update({'server.shutdown_timeout': 1, 'server.thread_pool': 100})
+        cherrypy.log.error_log.setLevel(logging.CRITICAL)
+        self.server = cherrypy._cpserver.Server()
+        if self.address == '*':
+            # we listen to every IPv4 available IP addresses
+            self.server.socket_host = '0.0.0.0'
+
+            # we must create a distinct server to support both IPv4 and IPv6 at the same time
+            self.server6 = cherrypy._cpserver.Server()
+            self.server6.socket_host = '::'
+            self.server6.socket_port = self.port
+        else:
+            # we bind to only IPv4 or IPv6, not both at the same time
+            self.server.socket_host = self.address
+        self.server.socket_port = self.port
+
+        cherrypy.tree.graft(app, script_name='/')
+        self.connected = True
 
     def interrupt_handler(self, signum, frame):
-        # print('Server signal interrupt handler called with signal', signum)
         if not self.interrupted:
             # ignore user hammering Ctrl-C; we heard you the first time!
             self.interrupted = True
             self.shutdown(EXIT_INTERRUPT)
 
     def start(self):
-        self.server.print_listen("BAZARR is started and waiting for requests on: http://{}:{}")
         signal.signal(signal.SIGINT, self.interrupt_handler)
         try:
-            self.server.run()
+            self.server.start()
+            if self.server6:
+                self.server6.start()
         except (KeyboardInterrupt, SystemExit):
             self.shutdown()
-        except Exception:
-            pass
+        except Exception as e:
+            logging.critical(f"BAZARR cannot start because of: {e}")
+            self.shutdown()
+        else:
+            logging.info(f"BAZARR is started and waiting for requests on: {self.server.base()}")
 
     def close_all(self):
-        print("Closing database...")
+        logging.info("Closing database...")
         close_database()
+        logging.info("Please wait while we're closing webserver...")
+        # IPv6 only webserver must be stopped first if it's been started.
+        if self.server6:
+            self.server6.stop()
+        # then we stop the main webserver
         if self.server:
-            print("Closing webserver...")
-            self.server.close()
+            self.server.stop()
 
     def shutdown(self, status=EXIT_NORMAL):
         self.close_all()

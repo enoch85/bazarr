@@ -56,42 +56,6 @@ class NoExceptionFormatter(logging.Formatter):
         return ''
 
 
-class UnwantedWaitressMessageFilter(logging.Filter):
-    def filter(self, record):
-        if settings.general.debug or "BAZARR" in record.msg:
-            # no filtering in debug mode or if originating from us
-            return True
-
-        if record.levelno < logging.ERROR:
-            return False
-
-        unwantedMessages = [
-            "Exception while serving /api/socket.io/",
-            ['Session is disconnected', 'Session not found'],
-
-            "Exception while serving /api/socket.io/",
-            ["'Session is disconnected'", "'Session not found'"],
-
-            "Exception while serving /api/socket.io/",
-            ['"Session is disconnected"', '"Session not found"'],
-
-            "Exception when servicing %r",
-            [],
-        ]
-
-        wanted = True
-        listLength = len(unwantedMessages)
-        for i in range(0, listLength, 2):
-            if record.msg == unwantedMessages[i]:
-                exceptionTuple = record.exc_info
-                if exceptionTuple is not None:
-                    if len(unwantedMessages[i+1]) == 0 or str(exceptionTuple[1]) in unwantedMessages[i+1]:
-                        wanted = False
-                        break
-
-        return wanted
-
-
 def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
     warnings.simplefilter('ignore', category=PytzUsageWarning)
@@ -166,8 +130,6 @@ def configure_logging(debug=False):
         logging.getLogger("websocket").setLevel(logging.CRITICAL)
         logging.getLogger("ga4mp.ga4mp").setLevel(logging.ERROR)
 
-    logging.getLogger("waitress").setLevel(logging.INFO)
-    logging.getLogger("waitress").addFilter(UnwantedWaitressMessageFilter())
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)

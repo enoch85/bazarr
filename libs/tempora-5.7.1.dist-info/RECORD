@@ -1,0 +1,13 @@
+../../bin/calc-prorate,sha256=LQ2erGYLNJVAOzFu4OWRzZ01_BsNnbL57dMI_Ivks3U,271
+tempora-5.7.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+tempora-5.7.1.dist-info/LICENSE,sha256=htoPAa6uRjSKPD1GUZXcHOzN55956HdppkuNoEsqR0E,1023
+tempora-5.7.1.dist-info/METADATA,sha256=2rEQ_6rrhSYnq3irCELaQFAslERG1bseVrIDrNlE9b0,3315
+tempora-5.7.1.dist-info/RECORD,,
+tempora-5.7.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+tempora-5.7.1.dist-info/WHEEL,sha256=iAkIy5fosb7FzIOwONchHf19Qu7_1wCWyFNR5gu9nU0,91
+tempora-5.7.1.dist-info/entry_points.txt,sha256=ByC6Q2uV9fc5x0fowWDG0lL02l9w0ISp_fZwGQ7s0ys,67
+tempora-5.7.1.dist-info/top_level.txt,sha256=s9TJ4uutFRCBEzoCykLLwjIjAPBtiF7ny_ut4MZvC5Q,8
+tempora/__init__.py,sha256=2E-7_p3MO0OhMUElcISB8d_mAuLTdcLxjYTVQzP0nuA,20148
+tempora/schedule.py,sha256=u19WNNsr3vyBWIsz5AMBevhMiLEt6CFhS4qBECfRbSI,6018
+tempora/timing.py,sha256=yIo-GSqT4p2neTgslqiUS72lmBtODbgzUnqi3TdTljo,7146
+tempora/utc.py,sha256=ey7XPc68l-bndpi6-2EFNs8qdDQH4tUv_whptcSGDEA,1027
