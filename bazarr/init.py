@@ -219,10 +219,3 @@ def init_binaries():
 init_db()
 init_binaries()
 path_mappings.update()
-
-from bazarr.api.plex.oauth import plex_oauth
-# Register blueprint with Flask app
-app.register_blueprint(plex_oauth)
-
-from bazarr.plex import plex_api
-app.register_blueprint(plex_api)
