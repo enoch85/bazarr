@@ -2,6 +2,8 @@
 
 A complete Docker-based development environment for Bazarr with live code reloading for both backend and frontend.
 
+> **Note**: This is the official Docker development setup for Bazarr. All Docker-related files are centralized here to avoid confusion and ensure consistency.
+
 ## Quick Start
 
 ### 1. Clone your fork
@@ -213,9 +215,7 @@ Host Machine
     ├── docker-compose.yml → Orchestration config
     ├── test-setup.sh → Setup validation script
     └── README.md
-```
-
-**Note**: The `frontend/Dockerfile` in the frontend directory is kept for potential production builds, while `dev-setup/Dockerfile.frontend` is optimized for development with better caching and security. 
+``` 
 
 Backend Container (/app/bazarr/bin/)
 ├── bazarr/ (backend source - mounted)
