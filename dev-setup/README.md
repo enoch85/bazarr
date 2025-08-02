@@ -25,14 +25,17 @@ docker compose up --build
 
 This is the Bazarr web interface with live reloading. The frontend automatically communicates with the backend API (port 6767).
 
-**Important**: Always use port 5173 to access Bazarr - port 6767 is API-only and not meant for direct browser access.
+**Important**: 
+- Port 5173: Frontend development server with hot module replacement
+- Port 6767: Backend API server (not meant for direct browser access)
 
 ## What This Provides
 
 ### 🐳 **Fully Containerized Development**
-- All development happens inside Docker containers
+- Separate optimized containers for backend (Python/Alpine) and frontend (Node.js)
 - No need for local Node.js, Python, or other dependencies on your host
 - Consistent development environment across different machines
+- Each container only includes necessary dependencies
 
 ### 🔄 **Live Code Reloading**
 - **Backend**: Python files are mounted and changes reflect immediately
@@ -85,8 +88,11 @@ docker compose up --build
 # View logs
 docker compose logs -f
 
-# Access container shell for debugging
-docker compose exec bazarr-dev sh
+# Access backend container shell for debugging
+docker compose exec bazarr-backend sh
+
+# Access frontend container shell for debugging  
+docker compose exec bazarr-frontend sh
 
 # Stop the environment
 docker compose down
@@ -134,14 +140,14 @@ sudo chown -R $USER:$USER ./data
 ```
 
 ### Frontend Not Loading
-- Check container logs: `docker compose logs -f`
+- Check frontend logs: `docker compose logs -f bazarr-frontend`
 - Ensure Vite dev server started successfully
-- Try rebuilding: `docker compose up --build`
+- Try rebuilding frontend: `docker compose up --build bazarr-frontend`
 
 ### Backend API Issues
-- Verify backend is running: `docker compose logs bazarr-dev`
+- Verify backend is running: `docker compose logs bazarr-backend`
 - Check if port 6767 is accessible: `curl http://localhost:6767`
-- Review Python error logs in the container output
+- Review Python error logs in the backend container output
 
 ### Complete Reset
 If you encounter persistent issues:
@@ -150,7 +156,7 @@ If you encounter persistent issues:
 docker compose down -v
 
 # Remove built images
-docker rmi bazarr-dev-setup-bazarr-dev
+docker rmi dev-setup-bazarr-backend dev-setup-bazarr-frontend
 
 # Rebuild from scratch
 docker compose up --build
@@ -160,11 +166,17 @@ docker compose up --build
 
 ### Container Shell Access
 ```bash
-# Access the running container
-docker compose exec bazarr-dev sh
+# Access the backend container
+docker compose exec bazarr-backend sh
 
-# Install additional tools inside container if needed
-apk add --no-cache curl vim
+# Access the frontend container
+docker compose exec bazarr-frontend sh
+
+# Install additional tools inside backend container if needed
+docker compose exec bazarr-backend apk add --no-cache curl vim
+
+# Install additional tools inside frontend container if needed
+docker compose exec bazarr-frontend apk add --no-cache curl vim
 ```
 
 ### Logs and Debugging
@@ -173,15 +185,16 @@ apk add --no-cache curl vim
 docker compose logs -f
 
 # Follow only backend logs
-docker compose logs -f bazarr-dev | grep -v "vite"
+docker compose logs -f bazarr-backend
 
 # Follow only frontend logs  
-docker compose logs -f bazarr-dev | grep "vite"
+docker compose logs -f bazarr-frontend
 ```
 
 ### Performance
-- The container runs both frontend and backend simultaneously
-- Frontend dev server starts first, backend starts after 10 seconds
+- Separate containers for frontend and backend for better resource utilization
+- Backend uses lightweight Alpine Linux with Python
+- Frontend uses optimized Node.js Alpine image
 - All file changes are immediately reflected due to volume mounts
 
 ## Architecture
@@ -189,22 +202,29 @@ docker compose logs -f bazarr-dev | grep "vite"
 ```
 Host Machine
 ├── bazarr/ (your code)
-│   ├── bazarr/ → mounted in container
-│   ├── frontend/ → mounted in container  
-│   ├── custom_libs/ → mounted in container
-│   └── libs/ → mounted in container
+│   ├── bazarr/ → mounted in backend container
+│   ├── frontend/ → mounted in frontend container  
+│   ├── custom_libs/ → mounted in backend container
+│   └── libs/ → mounted in backend container
 └── dev-setup/
     ├── data/ → persistent data
-    ├── Dockerfile
-    ├── docker-compose.yml
+    ├── Dockerfile.backend → Python/Alpine backend image
+    ├── Dockerfile.frontend → Node.js frontend image
+    ├── docker-compose.yml → Orchestration config
+    ├── test-setup.sh → Setup validation script
     └── README.md
 
-Container (/app/bazarr/bin/)
+Backend Container (/app/bazarr/bin/)
 ├── bazarr/ (backend source - mounted)
-├── frontend/ (frontend source - mounted)
 ├── custom_libs/ (mounted)
 ├── libs/ (mounted)
 └── data/ (persistent data - mounted)
+
+Frontend Container (/app/)
+├── src/ (frontend source - mounted)
+├── public/ (static assets - mounted)
+├── config/ (configuration - mounted)
+└── node_modules/ (npm packages - container only)
 ```
 
 ## Next Steps

@@ -2,45 +2,45 @@ services:
   bazarr-backend:
     build:
       context: ..
-      dockerfile: dev-setup/Dockerfile
+      dockerfile: dev-setup/Dockerfile.backend
     container_name: bazarr-backend
     ports:
-      - "6767:6767"  # Bazarr backend
+      - "6767:6767"  # Bazarr backend API
     volumes:
       # Mount source code for live editing
-      - ../bazarr:/app/bazarr/bin/bazarr
-      - ../custom_libs:/app/bazarr/bin/custom_libs
-      - ../libs:/app/bazarr/bin/libs
+      - ../bazarr:/app/bazarr/bin/bazarr:ro
+      - ../custom_libs:/app/bazarr/bin/custom_libs:ro
+      - ../libs:/app/bazarr/bin/libs:ro
       
       # Mount data directory for persistence
       - ./data:/app/bazarr/data
     environment:
       - SZ_USER_AGENT=bazarr-dev
       - BAZARR_VERSION=dev
-      - PYTHONPATH=/app/bazarr/bin/libs:/app/bazarr/bin:/app/bazarr/bin/custom_libs
-    command: ["sh", "-c", "cd /app/bazarr/bin && python3 bazarr.py --debug --no-update"]
+      - PYTHONPATH=/app/bazarr/bin/custom_libs:/app/bazarr/bin/libs:/app/bazarr/bin/bazarr:/app/bazarr/bin
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    networks:
+      - bazarr-network
 
   bazarr-frontend:
     build:
-      context: ..
-      dockerfile: dev-setup/Dockerfile
+      context: ../frontend
+      dockerfile: ../dev-setup/Dockerfile.frontend
     container_name: bazarr-frontend
     ports:
       - "5173:5173"  # Vite frontend dev server
     volumes:
       # Mount frontend source code for live editing
-      - ../frontend/src:/app/bazarr/bin/frontend/src
-      - ../frontend/public:/app/bazarr/bin/frontend/public
-      - ../frontend/config:/app/bazarr/bin/frontend/config
-      - ../frontend/vite.config.ts:/app/bazarr/bin/frontend/vite.config.ts
-      - ../frontend/tsconfig.json:/app/bazarr/bin/frontend/tsconfig.json
-      - ../frontend/.env.development:/app/bazarr/bin/frontend/.env.development
+      - ../frontend/src:/app/src:ro
+      - ../frontend/public:/app/public:ro
+      - ../frontend/config:/app/config:ro
+      - ../frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ../frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ../frontend/package.json:/app/package.json:ro
+      - ../frontend/.env.development:/app/.env.development:ro
       
-      # Share data directory so frontend can read backend config
-      - ./data:/app/bazarr/data
+      # Ensure node_modules is not overwritten by volume mount
+      - /app/node_modules
     environment:
       - NODE_ENV=development
       - VITE_PROXY_URL=http://bazarr-backend:6767
@@ -48,12 +48,15 @@ services:
       - VITE_CAN_UPDATE=true
       - VITE_HAS_UPDATE=false
       - VITE_REACT_QUERY_DEVTOOLS=true
-    command: ["sh", "-c", "sleep 45 && cd /app/bazarr/bin/frontend && PATH=$PATH:./node_modules/.bin npm run start"]
     depends_on:
       - bazarr-backend
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    networks:
+      - bazarr-network
+
+networks:
+  bazarr-network:
+    driver: bridge
 
 volumes:
   bazarr-dev-data:
