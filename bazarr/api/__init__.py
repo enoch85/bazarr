@@ -22,7 +22,7 @@ api_ns_list = [
     api_ns_list_files,
     api_ns_list_history,
     api_ns_list_movies,
-    [api_ns_plex],
+    api_ns_plex,
     api_ns_list_providers,
     api_ns_list_series,
     api_ns_list_subtitles,
