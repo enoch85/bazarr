@@ -1,0 +1,60 @@
+services:
+  bazarr-backend:
+    build:
+      context: ..
+      dockerfile: dev-setup/Dockerfile
+    container_name: bazarr-backend
+    ports:
+      - "6767:6767"  # Bazarr backend
+    volumes:
+      # Mount source code for live editing
+      - ../bazarr:/app/bazarr/bin/bazarr
+      - ../custom_libs:/app/bazarr/bin/custom_libs
+      - ../libs:/app/bazarr/bin/libs
+      
+      # Mount data directory for persistence
+      - ./data:/app/bazarr/data
+    environment:
+      - SZ_USER_AGENT=bazarr-dev
+      - BAZARR_VERSION=dev
+      - PYTHONPATH=/app/bazarr/bin/libs:/app/bazarr/bin:/app/bazarr/bin/custom_libs
+    command: ["sh", "-c", "cd /app/bazarr/bin && python3 bazarr.py --debug --no-update"]
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  bazarr-frontend:
+    build:
+      context: ..
+      dockerfile: dev-setup/Dockerfile
+    container_name: bazarr-frontend
+    ports:
+      - "5173:5173"  # Vite frontend dev server
+    volumes:
+      # Mount frontend source code for live editing
+      - ../frontend/src:/app/bazarr/bin/frontend/src
+      - ../frontend/public:/app/bazarr/bin/frontend/public
+      - ../frontend/config:/app/bazarr/bin/frontend/config
+      - ../frontend/vite.config.ts:/app/bazarr/bin/frontend/vite.config.ts
+      - ../frontend/tsconfig.json:/app/bazarr/bin/frontend/tsconfig.json
+      - ../frontend/.env.development:/app/bazarr/bin/frontend/.env.development
+      
+      # Share data directory so frontend can read backend config
+      - ./data:/app/bazarr/data
+    environment:
+      - NODE_ENV=development
+      - VITE_PROXY_URL=http://bazarr-backend:6767
+      - VITE_BAZARR_CONFIG_FILE=/app/bazarr/data/config/config.yaml
+      - VITE_CAN_UPDATE=true
+      - VITE_HAS_UPDATE=false
+      - VITE_REACT_QUERY_DEVTOOLS=true
+    command: ["sh", "-c", "sleep 45 && cd /app/bazarr/bin/frontend && PATH=$PATH:./node_modules/.bin npm run start"]
+    depends_on:
+      - bazarr-backend
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+volumes:
+  bazarr-dev-data:
+    driver: local
