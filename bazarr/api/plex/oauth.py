@@ -40,3 +40,5 @@ class PlexSelectServer(Resource):
         data = request.json
         success = PlexService.save_selected_server(data)
         return {'success': success}
+
+api_ns_list_plex = [api_ns_plex]
