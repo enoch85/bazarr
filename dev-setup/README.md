@@ -206,13 +206,16 @@ Host Machine
 │   ├── frontend/ → mounted in frontend container  
 │   ├── custom_libs/ → mounted in backend container
 │   └── libs/ → mounted in backend container
-└── dev-setup/
+└── dev-setup/ (all dev environment files in one place)
     ├── data/ → persistent data
     ├── Dockerfile.backend → Python/Alpine backend image
-    ├── Dockerfile.frontend → Node.js frontend image
+    ├── Dockerfile.frontend → Node.js frontend image (dev-optimized)
     ├── docker-compose.yml → Orchestration config
     ├── test-setup.sh → Setup validation script
     └── README.md
+```
+
+**Note**: The `frontend/Dockerfile` in the frontend directory is kept for potential production builds, while `dev-setup/Dockerfile.frontend` is optimized for development with better caching and security. 
 
 Backend Container (/app/bazarr/bin/)
 ├── bazarr/ (backend source - mounted)

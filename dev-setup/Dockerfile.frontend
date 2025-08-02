@@ -17,6 +17,12 @@ RUN npm ci
 # Copy source files (these will be overridden by volume mounts in dev)
 COPY . .
 
+# Change ownership of the /app directory to the node user
+RUN chown -R node:node /app
+
+# Switch to the node user for security
+USER node
+
 # Ensure node_modules/.bin is in the PATH
 ENV PATH=/app/node_modules/.bin:$PATH
 
