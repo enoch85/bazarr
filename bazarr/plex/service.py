@@ -36,15 +36,14 @@ class PlexServerToken:
         return {'token': self.token}
 
 class PlexService:
-    @staticmethod
+        @staticmethod
     def start_oauth():
-        from flask import request
         # Build redirect URI dynamically based on the current request
-        if request and request.host:
-            scheme = request.scheme if request.scheme else 'http'
+        if has_request_context():
+            scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
             redirect_uri = f'{scheme}://{request.host}/api/plex/oauth/callback'
         else:
-            # Fallback to environment variable
+            # Fallback to environment variable or default
             redirect_uri = PLEX_REDIRECT_URI
         
         oauth_url = f'https://plex.tv/auth#?clientID={PLEX_CLIENT_ID}&code={PLEX_CLIENT_SECRET}&redirect={redirect_uri}'
