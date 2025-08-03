@@ -2,7 +2,6 @@
 
 from flask import redirect, request
 from flask_restx import Namespace, Resource
-from app.config import settings
 
 api_ns_plex = Namespace('Plex', description='Plex OAuth operations')
 
