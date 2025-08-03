@@ -15,7 +15,11 @@ def get_plex_server() -> PlexServer:
     from bazarr.app.config import settings
     
     try:
-        protocol = "https://" if settings.plex.ssl else "http://"
+        # Check if we have the required settings
+        if not hasattr(settings.plex, 'ip') or not hasattr(settings.plex, 'port') or not hasattr(settings.plex, 'apikey'):
+            raise Exception("Plex settings not configured")
+            
+        protocol = "https://" if getattr(settings.plex, 'ssl', False) else "http://"
         baseurl = f"{protocol}{settings.plex.ip}:{settings.plex.port}"
         return PlexServer(baseurl, settings.plex.apikey)
     except Exception as e:
