@@ -234,7 +234,6 @@ Host Machine
     ├── docker-compose.yml → Orchestration config
     ├── test-setup.sh → Setup validation script
     └── README.md
-``` 
 
 Backend Container (/app/bazarr/bin/)
 ├── bazarr/ (backend source - mounted)
