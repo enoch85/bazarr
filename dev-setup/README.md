@@ -16,7 +16,7 @@ cd bazarr/dev-setup
 ```bash
 ./test-setup.sh
 ```
-This will create the necessary directories and a minimal config file with authentication disabled for development.
+This will create the necessary directories and a minimal config file with default credentials for development.
 
 ### 3. Start development environment
 ```bash
@@ -28,9 +28,14 @@ docker compose up --build
 
 This is the Bazarr web interface with live reloading. The frontend automatically communicates with the backend API (port 6767).
 
+**Default credentials:**
+- Username: `admin`
+- Password: `admin`
+
 **Important**: 
 - Port 5173: Frontend development server with hot module replacement
 - Port 6767: Backend API server (not meant for direct browser access)
+- API Key: `bazarr` (for API access)
 
 ## What This Provides
 
@@ -152,10 +157,11 @@ sudo chown -R $USER:$USER ./data
 
 ### Authentication/Login Issues
 If you're prompted for a password:
-1. The development setup should have authentication disabled by default
-2. Check if `data/config/config.yaml` exists and has `auth.type: null`
+1. The default credentials are: **admin/admin**
+2. Check if `data/config/config.yaml` exists with proper auth settings
 3. If not, run `./test-setup.sh` to create the proper config
 4. Restart the containers: `docker compose restart`
+5. The API key is set to: **bazarr**
 
 If you still have issues:
 - Delete the data directory: `rm -rf data/`

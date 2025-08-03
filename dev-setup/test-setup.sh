@@ -31,18 +31,20 @@ echo "✅ Data directory is ready"
 # Create a minimal config for development if it doesn't exist
 if [ ! -f "./data/config/config.yaml" ]; then
     echo "📝 Creating minimal config.yaml for development..."
+    # The password needs to be stored as MD5 hash
+    # MD5 hash of "admin" is: 21232f297a57a5a743894a0e4a801fc3
     cat > data/config/config.yaml << 'EOF'
 auth:
-  type: null
-  apikey: ''
-  username: ''
-  password: ''
+  type: form
+  apikey: 'bazarr'
+  username: 'admin'
+  password: '21232f297a57a5a743894a0e4a801fc3'
 
 general:
   port: 6767
   base_url: ''
 EOF
-    echo "✅ Config file created with authentication disabled"
+    echo "✅ Config file created with default credentials (admin/admin)"
 else
     echo "✅ Config file already exists"
 fi
