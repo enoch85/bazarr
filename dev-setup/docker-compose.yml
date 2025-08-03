@@ -46,6 +46,7 @@ services:
       - ../frontend/tsconfig.json:/app/tsconfig.json:ro
       - ../frontend/package.json:/app/package.json:ro
       - ../frontend/.env.development:/app/.env.development:ro
+      - ../frontend/index.dev.html:/app/index.dev.html:ro
       
       # Ensure node_modules is not overwritten by volume mount
       - /app/node_modules
@@ -59,7 +60,7 @@ services:
       - VITE_CAN_UPDATE=true
       - VITE_HAS_UPDATE=false
       - VITE_REACT_QUERY_DEVTOOLS=true
-      - VITE_API_KEY='' # Empty key for development
+      - VITE_API_KEY=bazarr # Set the API key to match config
     depends_on:
       - bazarr-backend
     restart: unless-stopped
