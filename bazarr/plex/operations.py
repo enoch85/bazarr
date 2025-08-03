@@ -1,7 +1,5 @@
 # coding=utf-8
 from datetime import datetime
-# coding=utf-8
-
 from utilities.central import stop_bazarr, restart_bazarr
 from plexapi.server import PlexServer
 import logging
