@@ -4,7 +4,8 @@ import requests
 
 PLEX_CLIENT_ID = os.getenv('PLEX_CLIENT_ID', 'bazarr')
 PLEX_CLIENT_SECRET = os.getenv('PLEX_CLIENT_SECRET', '')
-PLEX_REDIRECT_URI = os.getenv('PLEX_REDIRECT_URI', 'http://localhost:6767/api/plex/oauth/callback')
+# In development, frontend runs on 5173, in production use the default port
+PLEX_REDIRECT_URI = os.getenv('PLEX_REDIRECT_URI', 'http://localhost:5173/api/plex/oauth/callback' if os.getenv('NODE_ENV') == 'development' else 'http://localhost:6767/api/plex/oauth/callback')
 PLEX_OAUTH_URL = 'https://plex.tv/users/sign_in.json'
 PLEX_RESOURCES_URL = 'https://plex.tv/api/v2/resources?includeHttps=1'
 
@@ -37,13 +38,30 @@ class PlexServerToken:
 class PlexService:
     @staticmethod
     def start_oauth():
-        oauth_url = f'https://plex.tv/auth#?clientID={PLEX_CLIENT_ID}&code={PLEX_CLIENT_SECRET}&redirect={PLEX_REDIRECT_URI}'
+        from flask import request
+        # Build redirect URI dynamically based on the current request
+        if request and request.host:
+            scheme = request.scheme if request.scheme else 'http'
+            redirect_uri = f'{scheme}://{request.host}/api/plex/oauth/callback'
+        else:
+            # Fallback to environment variable
+            redirect_uri = PLEX_REDIRECT_URI
+        
+        oauth_url = f'https://plex.tv/auth#?clientID={PLEX_CLIENT_ID}&code={PLEX_CLIENT_SECRET}&redirect={redirect_uri}'
         return oauth_url
 
     @staticmethod
     def exchange_code_for_token(code):
-        from flask import session
+        from flask import session, request
         from bazarr.app.config import settings, save_settings
+        
+        # Build redirect URI dynamically based on the current request
+        if request and request.host:
+            scheme = request.scheme if request.scheme else 'http'
+            redirect_uri = f'{scheme}://{request.host}/api/plex/oauth/callback'
+        else:
+            # Fallback to environment variable
+            redirect_uri = PLEX_REDIRECT_URI
         
         resp = requests.post(PLEX_OAUTH_URL, headers={
             'X-Plex-Client-Identifier': PLEX_CLIENT_ID,
@@ -57,7 +75,7 @@ class PlexService:
             'code': code,
             'client_id': PLEX_CLIENT_ID,
             'client_secret': PLEX_CLIENT_SECRET,
-            'redirect_uri': PLEX_REDIRECT_URI,
+            'redirect_uri': redirect_uri,
             'grant_type': 'authorization_code',
         })
         if resp.status_code != 200:
@@ -65,7 +83,7 @@ class PlexService:
         token = resp.json().get('user', {}).get('authToken')
         if token:
             session['plex_token'] = token
-            settings.plex_token = token
+            settings.plex.token = token
             save_settings(settings)
             return PlexServerToken(token)
         return None
@@ -75,7 +93,7 @@ class PlexService:
         from flask import session
         from bazarr.app.config import settings
         
-        token = session.get('plex_token') or getattr(settings, 'plex_token', None)
+        token = session.get('plex_token') or getattr(settings.plex, 'token', None)
         if not token:
             return None
         resp = requests.get(PLEX_RESOURCES_URL, headers={
@@ -108,8 +126,8 @@ class PlexService:
     def save_selected_server(data):
         from bazarr.app.config import settings, save_settings
         
-        settings.plex_ip = data.get('address')
-        settings.plex_port = data.get('port')
-        settings.plex_ssl = data.get('ssl')
+        settings.plex.ip = data.get('address')
+        settings.plex.port = data.get('port')
+        settings.plex.ssl = data.get('ssl')
         save_settings(settings)
         return True
