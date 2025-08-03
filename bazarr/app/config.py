@@ -476,16 +476,27 @@ settings = Dynaconf(
 
 settings.validators.register(*validators)
 
-# Defer validation to prevent circular import issues during startup
+# Run initial validation to set defaults so settings can be accessed at module import time
+try:
+    settings.validators.validate_all()
+except ValidationError as e:
+    # If validation fails, try to set defaults for any missing required fields
+    for error_details in e.details:
+        current_validator_details = error_details[0]
+        if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
+            settings[current_validator_details.names[0]] = current_validator_details.default
+
+# Additional validation and runtime configuration updates
 def validate_config():
     """Validate configuration settings after all modules are loaded."""
-    failed_validator = True
-    while failed_validator:
-        try:
-            settings.validators.validate_all()
-            failed_validator = False
-        except ValidationError as e:
-            current_validator_details = e.details[0][0]
+    # Re-run validation to ensure everything is properly configured
+    # This handles any validators that couldn't run during initial import due to circular dependencies
+    try:
+        settings.validators.validate_all()
+    except ValidationError as e:
+        # Handle any remaining validation errors
+        for error_details in e.details:
+            current_validator_details = error_details[0]
             if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
                 settings[current_validator_details.names[0]] = current_validator_details.default
             else:
@@ -538,6 +549,10 @@ def validate_config():
     
     # save updated settings to file
     write_config()
+    
+    # Set the global base_url variable after validation
+    global base_url
+    base_url = settings.general.base_url.rstrip('/')
 
 # Note: validate_config() should be called from main.py after imports are complete
 
@@ -563,7 +578,8 @@ def write_config():
                                   f"file: {error}")
 
 
-base_url = settings.general.base_url.rstrip('/')
+# base_url will be set after validate_config() is called
+base_url = ''
 
 ignore_keys = ['flask_secret_key']
 
