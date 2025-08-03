@@ -239,6 +239,7 @@ validators = [
     
     # New Plex OAuth settings
     Validator('plex.servers', must_exist=True, default=[], is_type_of=list),
+    Validator('plex.token', must_exist=True, default='', is_type_of=str),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
@@ -475,20 +476,25 @@ settings = Dynaconf(
 
 settings.validators.register(*validators)
 
-failed_validator = True
-while failed_validator:
-    try:
-        settings.validators.validate_all()
-        failed_validator = False
-    except ValidationError as e:
-        current_validator_details = e.details[0][0]
-        if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
-            settings[current_validator_details.names[0]] = current_validator_details.default
-        else:
-            logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
-                             f"default value. This issue must be reported to and fixed by the development team. "
-                             f"Bazarr won't work until it's been fixed.")
-            stop_bazarr(EXIT_VALIDATION_ERROR)
+# Defer validation to prevent circular import issues during startup
+def validate_config():
+    """Validate configuration settings after all modules are loaded."""
+    failed_validator = True
+    while failed_validator:
+        try:
+            settings.validators.validate_all()
+            failed_validator = False
+        except ValidationError as e:
+            current_validator_details = e.details[0][0]
+            if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
+                settings[current_validator_details.names[0]] = current_validator_details.default
+            else:
+                logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
+                                 f"default value. This issue must be reported to and fixed by the development team. "
+                                 f"Bazarr won't work until it's been fixed.")
+                stop_bazarr(EXIT_VALIDATION_ERROR)
+
+# Note: validate_config() should be called from main.py after imports are complete
 
 
 def write_config():

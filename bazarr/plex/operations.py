@@ -1,6 +1,8 @@
 # coding=utf-8
 from datetime import datetime
-from app.config import settings
+# coding=utf-8
+
+from utilities.central import stop_bazarr, restart_bazarr
 from plexapi.server import PlexServer
 import logging
 
@@ -12,6 +14,8 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
+    from bazarr.app.config import settings
+    
     try:
         protocol = "https://" if settings.plex.ssl else "http://"
         baseurl = f"{protocol}{settings.plex.ip}:{settings.plex.port}"
@@ -38,6 +42,8 @@ def plex_set_movie_added_date_now(movie_metadata) -> None:
 
     :param movie_metadata: Metadata object containing the movie's IMDb ID.
     """
+    from bazarr.app.config import settings
+    
     try:
         plex = get_plex_server()
         library = plex.library.section(settings.plex.movie_library)
@@ -54,6 +60,8 @@ def plex_set_episode_added_date_now(episode_metadata) -> None:
 
     :param episode_metadata: Metadata object containing the episode's IMDb ID, season, and episode number.
     """
+    from bazarr.app.config import settings
+    
     try:
         plex = get_plex_server()
         library = plex.library.section(settings.plex.series_library)
@@ -71,6 +79,8 @@ def plex_update_library(is_movie_library: bool) -> None:
 
     :param is_movie_library: True for movie library, False for series library.
     """
+    from bazarr.app.config import settings
+    
     try:
         plex = get_plex_server()
         library_name = settings.plex.movie_library if is_movie_library else settings.plex.series_library
