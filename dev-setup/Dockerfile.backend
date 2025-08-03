@@ -31,9 +31,11 @@ WORKDIR /app/bazarr/bin
 
 # Copy only backend-related files
 COPY requirements.txt postgres-requirements.txt dev-requirements.txt ./
+COPY bazarr.py ./
 COPY libs ./libs
 COPY custom_libs ./custom_libs
 COPY bazarr ./bazarr
+COPY migrations ./migrations
 
 # Install Python dependencies
 RUN \
@@ -56,4 +58,4 @@ ENV BAZARR_VERSION="dev"
 ENV PYTHONPATH="/app/bazarr/bin/custom_libs:/app/bazarr/bin/libs:/app/bazarr/bin/bazarr:/app/bazarr/bin"
 
 # Default command
-CMD ["python3", "bazarr.py", "--debug", "--no-update"]
+CMD ["python3", "bazarr.py", "--debug", "--no-update", "--config", "/app/bazarr/data"]

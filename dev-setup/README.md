@@ -12,10 +12,11 @@ git clone https://github.com/YOUR_USERNAME/bazarr.git
 cd bazarr/dev-setup
 ```
 
-### 2. Create data directory
+### 2. Run the setup script
 ```bash
-mkdir -p data/config data/cache data/log
+./test-setup.sh
 ```
+This will create the necessary directories and a minimal config file with authentication disabled for development.
 
 ### 3. Start development environment
 ```bash
@@ -148,6 +149,18 @@ sudo chown -R $USER:$USER ./data
 
 ### Backend API Issues
 - Verify backend is running: `docker compose logs bazarr-backend`
+
+### Authentication/Login Issues
+If you're prompted for a password:
+1. The development setup should have authentication disabled by default
+2. Check if `data/config/config.yaml` exists and has `auth.type: null`
+3. If not, run `./test-setup.sh` to create the proper config
+4. Restart the containers: `docker compose restart`
+
+If you still have issues:
+- Delete the data directory: `rm -rf data/`
+- Run the setup script: `./test-setup.sh`
+- Rebuild and start: `docker compose up --build`
 - Check if port 6767 is accessible: `curl http://localhost:6767`
 - Review Python error logs in the backend container output
 

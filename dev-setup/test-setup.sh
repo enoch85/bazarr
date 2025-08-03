@@ -20,10 +20,32 @@ echo "✅ Docker and Docker Compose are installed"
 # Check if data directory exists
 if [ ! -d "./data" ]; then
     echo "📁 Creating data directory..."
-    mkdir -p data/config data/cache data/log
+    mkdir -p data/config data/cache data/log data/db
+else
+    echo "📁 Data directory exists, ensuring subdirectories..."
+    mkdir -p data/config data/cache data/log data/db
 fi
 
 echo "✅ Data directory is ready"
+
+# Create a minimal config for development if it doesn't exist
+if [ ! -f "./data/config/config.yaml" ]; then
+    echo "📝 Creating minimal config.yaml for development..."
+    cat > data/config/config.yaml << 'EOF'
+auth:
+  type: null
+  apikey: ''
+  username: ''
+  password: ''
+
+general:
+  port: 6767
+  base_url: ''
+EOF
+    echo "✅ Config file created with authentication disabled"
+else
+    echo "✅ Config file already exists"
+fi
 
 # Check if both services are defined
 if docker compose config --services | grep -q "bazarr-backend" && docker compose config --services | grep -q "bazarr-frontend"; then
