@@ -13,5 +13,5 @@ echo "Backend is ready!"
 # In development mode, we don't need to wait for API key since authentication might be disabled
 echo "Starting frontend in development mode..."
 
-# Start the frontend
-exec npm run start
+# Start the frontend with --no-open to prevent browser auto-open attempts in container
+exec npm run start -- --host --no-open
