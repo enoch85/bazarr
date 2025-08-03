@@ -18,7 +18,8 @@ from .database import close_database
 from .app import create_app
 
 app = create_app()
-app.register_blueprint(api_bp, url_prefix=base_url.rstrip('/') + '/api')
+# Register blueprints
+app.register_blueprint(api_bp)
 app.register_blueprint(ui_bp, url_prefix=base_url.rstrip('/'))
 
 

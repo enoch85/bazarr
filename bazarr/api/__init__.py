@@ -40,7 +40,6 @@ authorizations = {
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
-
 @apidoc.apidoc.add_app_template_global
 def swagger_static(filename):
     return url_for('ui.swaggerui_static', filename=filename)
