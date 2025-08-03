@@ -493,6 +493,51 @@ def validate_config():
                                  f"default value. This issue must be reported to and fixed by the development team. "
                                  f"Bazarr won't work until it's been fixed.")
                 stop_bazarr(EXIT_VALIDATION_ERROR)
+    
+    # After validation, apply runtime configuration updates
+    # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
+    if hasattr(settings, 'sonarr') and hasattr(settings.sonarr, 'series_sync'):
+        if settings.sonarr.series_sync < 15:
+            settings.sonarr.series_sync = 60
+    if hasattr(settings, 'radarr') and hasattr(settings.radarr, 'movies_sync'):
+        if settings.radarr.movies_sync < 15:
+            settings.radarr.movies_sync = 60
+    
+    # Make sure to get rid of double slashes in base_url
+    settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url)
+    settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
+    settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
+    
+    # increase delay between searches to reduce impact on providers
+    if settings.general.wanted_search_frequency == 3:
+        settings.general.wanted_search_frequency = 6
+    if settings.general.wanted_search_frequency_movie == 3:
+        settings.general.wanted_search_frequency_movie = 6
+    
+    # backward compatibility embeddedsubtitles provider
+    if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
+        if settings.embeddedsubtitles.unknown_as_english:
+            settings.embeddedsubtitles.unknown_as_fallback = True
+            settings.embeddedsubtitles.fallback_lang = 'en'
+        del settings.embeddedsubtitles.unknown_as_english
+    
+    # Backward compatibility for legacy Plex settings
+    # Migrate old single-server config to new multi-server format
+    if hasattr(settings, 'plex'):
+        if hasattr(settings.plex, 'apikey') and settings.plex.apikey and (not hasattr(settings.plex, 'servers') or not settings.plex.servers):
+            legacy_server = {
+                'id': 'legacy',
+                'name': 'Plex Media Server',
+                'host': settings.plex.ip,
+                'port': settings.plex.port,
+                'protocol': 'https' if settings.plex.ssl else 'http',
+                'token': settings.plex.apikey,
+                'updateLibrary': settings.plex.update_movie_library or settings.plex.update_series_library
+            }
+            settings.plex.servers = [legacy_server]
+    
+    # save updated settings to file
+    write_config()
 
 # Note: validate_config() should be called from main.py after imports are complete
 
@@ -541,46 +586,7 @@ empty_values = ['', 'None', 'null', 'undefined', None, []]
 
 str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
 
-# Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
-if settings.sonarr.series_sync < 15:
-    settings.sonarr.series_sync = 60
-if settings.radarr.movies_sync < 15:
-    settings.radarr.movies_sync = 60
-
-# Make sure to get of double slashes in base_url
-settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url)
-settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
-settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
-
-# increase delay between searches to reduce impact on providers
-if settings.general.wanted_search_frequency == 3:
-    settings.general.wanted_search_frequency = 6
-if settings.general.wanted_search_frequency_movie == 3:
-    settings.general.wanted_search_frequency_movie = 6
-
-# backward compatibility embeddedsubtitles provider
-if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
-    if settings.embeddedsubtitles.unknown_as_english:
-        settings.embeddedsubtitles.unknown_as_fallback = True
-        settings.embeddedsubtitles.fallback_lang = 'en'
-    del settings.embeddedsubtitles.unknown_as_english
-
-# Backward compatibility for legacy Plex settings
-# Migrate old single-server config to new multi-server format
-if settings.plex.apikey and not settings.plex.servers:
-    legacy_server = {
-        'id': 'legacy',
-        'name': 'Plex Media Server',
-        'host': settings.plex.ip,
-        'port': settings.plex.port,
-        'protocol': 'https' if settings.plex.ssl else 'http',
-        'token': settings.plex.apikey,
-        'updateLibrary': settings.plex.update_movie_library or settings.plex.update_series_library
-    }
-    settings.plex.servers = [legacy_server]
-
-# save updated settings to file
-write_config()
+# Note: All runtime configurations moved to validate_config() function
 
 
 def get_settings():
