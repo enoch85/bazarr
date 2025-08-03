@@ -12,7 +12,7 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
-    from bazarr.app.config import settings
+    from app.config import settings
     
     try:
         # Check if we have the required settings
@@ -44,7 +44,7 @@ def plex_set_movie_added_date_now(movie_metadata) -> None:
 
     :param movie_metadata: Metadata object containing the movie's IMDb ID.
     """
-    from bazarr.app.config import settings
+    from app.config import settings
     
     try:
         plex = get_plex_server()
@@ -62,7 +62,7 @@ def plex_set_episode_added_date_now(episode_metadata) -> None:
 
     :param episode_metadata: Metadata object containing the episode's IMDb ID, season, and episode number.
     """
-    from bazarr.app.config import settings
+    from app.config import settings
     
     try:
         plex = get_plex_server()
@@ -81,7 +81,7 @@ def plex_update_library(is_movie_library: bool) -> None:
 
     :param is_movie_library: True for movie library, False for series library.
     """
-    from bazarr.app.config import settings
+    from app.config import settings
     
     try:
         plex = get_plex_server()

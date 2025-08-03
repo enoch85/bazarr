@@ -53,7 +53,7 @@ class PlexService:
     @staticmethod
     def exchange_code_for_token(code):
         from flask import session, request
-        from bazarr.app.config import settings, save_settings
+        from app.config import settings, save_settings
         
         # Build redirect URI dynamically based on the current request
         if request and request.host:
@@ -91,7 +91,7 @@ class PlexService:
     @staticmethod
     def get_servers():
         from flask import session
-        from bazarr.app.config import settings
+        from app.config import settings
         
         token = session.get('plex_token') or getattr(settings.plex, 'token', None)
         if not token:
@@ -124,7 +124,7 @@ class PlexService:
 
     @staticmethod
     def save_selected_server(data):
-        from bazarr.app.config import settings, save_settings
+        from app.config import settings, save_settings
         
         settings.plex.ip = data.get('address')
         settings.plex.port = data.get('port')
