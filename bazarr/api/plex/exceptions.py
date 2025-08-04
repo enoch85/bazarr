@@ -27,3 +27,13 @@ class PlexServerNotFoundError(PlexAuthError):
     """Raised when Plex server not found."""
     def __init__(self, message="Plex server not found"):
         super().__init__(message, status_code=404, error_code="SERVER_NOT_FOUND")
+
+class PlexPinExpiredError(PlexAuthError):
+    """Raised when PIN has expired."""
+    def __init__(self, message="PIN has expired"):
+        super().__init__(message, status_code=410, error_code="PIN_EXPIRED")
+
+class PlexAuthTimeoutError(PlexAuthError):
+    """Raised when authentication times out."""
+    def __init__(self, message="Authentication timeout"):
+        super().__init__(message, status_code=408, error_code="AUTH_TIMEOUT")
