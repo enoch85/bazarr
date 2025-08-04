@@ -4,7 +4,7 @@
 from flask_restx import Namespace
 
 # Create namespace for Plex API
-api_ns_plex = Namespace('Plex Authentication', description='Plex OAuth and server management')
+api_ns_plex = Namespace('Plex Authentication', description='Plex OAuth and server management', path='/plex/oauth')
 
 # Import OAuth routes after namespace is created
 from .oauth import *  # noqa
