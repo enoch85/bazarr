@@ -16,7 +16,28 @@ from .security import TokenManager
 from .cache import cache_pin, get_cached_pin, delete_cached_pin
 from bazarr.app.config import settings
 
-# Initialize token manager for encryption
+from flask_restx import errors as restx_errors
+
+# Register error handler for API namespace to always return JSON
+@api_ns_plex.errorhandler(Exception)
+def handle_api_exception(error):
+    # If it's a known Bazarr exception, use its attributes
+    if hasattr(error, 'error_code') and hasattr(error, 'message'):
+        return {
+            'error': error.message,
+            'code': getattr(error, 'error_code', 'UNKNOWN_ERROR')
+        }, getattr(error, 'status_code', 500)
+    # If it's a requests exception
+    if isinstance(error, requests.exceptions.RequestException):
+        return {
+            'error': str(error),
+            'code': 'REQUEST_ERROR'
+        }, 502
+    # Otherwise, generic error
+    return {
+        'error': str(error),
+        'code': 'UNKNOWN_ERROR'
+    }, 500
 def get_token_manager():
     """Get or create token manager with encryption key."""
     key = settings.plex.get('encryption_key')
@@ -159,6 +180,10 @@ class PlexPin(Resource):
             
         except requests.exceptions.RequestException as e:
             raise PlexConnectionError(f"Failed to create PIN: {str(e)}")
+
+    def get(self):
+        from flask_restx import abort
+        abort(405, "Method not allowed. Use POST.")
 
 @api_ns_plex.route('/oauth/pin/<string:pin_id>/check')
 class PlexPinCheck(Resource):
@@ -328,6 +353,7 @@ class PlexLogout(Resource):
             settings.plex.auth_method = 'apikey'  # Reset to default
             settings.save()
             
+
             return {'success': True}
         except Exception as e:
             return {'error': 'Failed to logout'}, 500
@@ -375,6 +401,10 @@ class PlexTestConnection(Resource):
             return {'success': False, 'error': 'Connection timeout'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
+
+    def get(self):
+        from flask_restx import abort
+        abort(405, "Method not allowed. Use POST.")
 
 @api_ns_plex.route('/select-server')
 class PlexSelectServer(Resource):
