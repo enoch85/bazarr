@@ -124,6 +124,7 @@ export default defineConfig(({ mode, command }) => {
       manifest: true,
       sourcemap: mode === "development",
       outDir: "./build",
+      chunkSizeWarningLimit: 600, // Increase warning limit to 600kb
       rollupOptions: {
         output: {
           manualChunks: chunks,
