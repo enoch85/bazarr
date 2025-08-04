@@ -568,3 +568,112 @@ def fix_languages_profiles_with_duplicate_ids():
                 .values({"items": json.dumps(languages_profile_items)})
                 .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
             )
+
+
+"""Database updates for Plex OAuth.
+"""
+from datetime import datetime
+from peewee import CharField, DateTimeField, TextField, BooleanField
+
+from bazarr.app.database import BaseModel
+
+
+class PlexOAuthFields:
+    """Plex OAuth database fields to add to settings table."""
+    
+    # OAuth token fields
+    plex_auth_token = TextField(null=True)  # Encrypted token
+    plex_auth_token_timestamp = DateTimeField(null=True)
+    
+    # User information
+    plex_user_id = CharField(null=True, max_length=50)
+    plex_user_name = CharField(null=True, max_length=255)
+    plex_user_email = CharField(null=True, max_length=255)
+    
+    # Server information  
+    plex_server_url = CharField(null=True, max_length=500)
+    plex_server_machine_id = CharField(null=True, max_length=100)
+    plex_server_name = CharField(null=True, max_length=255)
+    
+    # Migration flags
+    plex_oauth_migrated = BooleanField(default=False)
+
+
+def migrate_plex_oauth(migrator, database):
+    """Migration to add Plex OAuth fields."""
+    
+    # Add OAuth fields to settings table
+    migrator.add_column('table_settings_provider', 'plex_auth_token', TextField(null=True))
+    migrator.add_column('table_settings_provider', 'plex_auth_token_timestamp', DateTimeField(null=True))
+    migrator.add_column('table_settings_provider', 'plex_user_id', CharField(null=True, max_length=50))
+    migrator.add_column('table_settings_provider', 'plex_user_name', CharField(null=True, max_length=255))
+    migrator.add_column('table_settings_provider', 'plex_user_email', CharField(null=True, max_length=255))
+    migrator.add_column('table_settings_provider', 'plex_server_url', CharField(null=True, max_length=500))
+    migrator.add_column('table_settings_provider', 'plex_server_machine_id', CharField(null=True, max_length=100))
+    migrator.add_column('table_settings_provider', 'plex_server_name', CharField(null=True, max_length=255))
+    migrator.add_column('table_settings_provider', 'plex_oauth_migrated', BooleanField(default=False))
+
+
+def rollback_plex_oauth(migrator, database):
+    """Rollback Plex OAuth fields."""
+    
+    migrator.drop_column('table_settings_provider', 'plex_auth_token')
+    migrator.drop_column('table_settings_provider', 'plex_auth_token_timestamp')
+    migrator.drop_column('table_settings_provider', 'plex_user_id')
+    migrator.drop_column('table_settings_provider', 'plex_user_name')
+    migrator.drop_column('table_settings_provider', 'plex_user_email')
+    migrator.drop_column('table_settings_provider', 'plex_server_url')
+    migrator.drop_column('table_settings_provider', 'plex_server_machine_id')
+    migrator.drop_column('table_settings_provider', 'plex_server_name')
+    migrator.drop_column('table_settings_provider', 'plex_oauth_migrated')
+
+
+class PlexDatabaseHelpers:
+    """Helper functions for Plex OAuth database operations."""
+    
+    @staticmethod
+    def migrate_legacy_token(settings, token_manager):
+        """Migrate legacy API token to OAuth format."""
+        if not settings or settings.plex_oauth_migrated:
+            return
+        
+        # Check for legacy token field (adjust field name as needed)
+        legacy_token = getattr(settings, 'settings_plex_token', None)
+        if legacy_token and not settings.plex_auth_token:
+            # Encrypt and store legacy token
+            encrypted_token = token_manager.encrypt_token(legacy_token)
+            settings.plex_auth_token = encrypted_token
+            settings.plex_auth_token_timestamp = datetime.utcnow()
+            settings.plex_oauth_migrated = True
+            settings.save()
+    
+    @staticmethod
+    def get_plex_config(settings):
+        """Get Plex configuration from settings."""
+        if not settings:
+            return None
+        
+        config = {
+            'auth_token': settings.plex_auth_token,
+            'user_id': settings.plex_user_id,
+            'user_name': settings.plex_user_name,
+            'server_url': settings.plex_server_url,
+            'server_machine_id': settings.plex_server_machine_id
+        }
+        
+        # Only return if we have auth data
+        if config['auth_token']:
+            return config
+        
+        return None
+    
+    @staticmethod
+    def update_server_config(settings, server_data):
+        """Update server configuration."""
+        if not settings or not server_data:
+            return
+        
+        settings.plex_server_url = server_data.get('uri', '')
+        settings.plex_server_machine_id = server_data.get('machine_id', '')
+        settings.plex_server_name = server_data.get('name', '')
+        settings.save()
