@@ -19,10 +19,36 @@ from ipaddress import ip_address
 from binascii import hexlify
 from types import MappingProxyType
 from shutil import move
+from cryptography.fernet import Fernet
 
 from .get_args import args
 
 NoneType = type(None)
+logger = logging.getLogger(__name__)
+
+
+# Plex Configuration Constants
+class PlexDefaults:
+    ENABLED = False
+    AUTH_METHOD = 'oauth'  # 'oauth' or 'token' for backward compatibility
+    ENCRYPTION_KEY = None  # Generated on first run
+    SERVERS = []  # List of configured servers
+    SELECTED_SERVER = None  # Currently selected server
+    TOKEN_REFRESH_INTERVAL = 86400  # 24 hours in seconds
+    CONNECTION_TIMEOUT = 10
+    LEGACY_TOKEN = None  # For backward compatibility with API key
+    PIN_CACHE_TTL = 600  # 10 minutes
+    
+    class OAuth:
+        CLIENT_NAME = 'Bazarr'
+        CLIENT_VERSION = None  # Set to Bazarr version
+        PLATFORM = 'Web'
+        DEVICE_NAME = 'Bazarr Media Manager'
+    
+    class RateLimit:
+        ENABLED = True
+        MAX_ATTEMPTS = 10
+        WINDOW_SECONDS = 300
 
 
 def base_url_slash_cleaner(uri):
@@ -238,7 +264,22 @@ validators = [
     Validator('plex.update_series_library', must_exist=False, default=False, is_type_of=bool),
     
     # New Plex OAuth settings
-    Validator('plex.servers', must_exist=True, default=[], is_type_of=list),
+    Validator('plex.enabled', must_exist=True, default=PlexDefaults.ENABLED, is_type_of=bool),
+    Validator('plex.auth_method', must_exist=True, default=PlexDefaults.AUTH_METHOD, is_type_of=str),
+    Validator('plex.encryption_key', must_exist=True, default=PlexDefaults.ENCRYPTION_KEY, is_type_of=(NoneType, str)),
+    Validator('plex.servers', must_exist=True, default=PlexDefaults.SERVERS, is_type_of=list),
+    Validator('plex.selected_server', must_exist=True, default=PlexDefaults.SELECTED_SERVER, is_type_of=(NoneType, str)),
+    Validator('plex.oauth.client_name', must_exist=True, default=PlexDefaults.OAuth.CLIENT_NAME, is_type_of=str),
+    Validator('plex.oauth.client_version', must_exist=True, default=PlexDefaults.OAuth.CLIENT_VERSION, is_type_of=(NoneType, str)),
+    Validator('plex.oauth.platform', must_exist=True, default=PlexDefaults.OAuth.PLATFORM, is_type_of=str),
+    Validator('plex.oauth.device_name', must_exist=True, default=PlexDefaults.OAuth.DEVICE_NAME, is_type_of=str),
+    Validator('plex.token_refresh_interval', must_exist=True, default=PlexDefaults.TOKEN_REFRESH_INTERVAL, is_type_of=int),
+    Validator('plex.connection_timeout', must_exist=True, default=PlexDefaults.CONNECTION_TIMEOUT, is_type_of=int),
+    Validator('plex.legacy_token', must_exist=True, default=PlexDefaults.LEGACY_TOKEN, is_type_of=(NoneType, str)),
+    Validator('plex.pin_cache_ttl', must_exist=True, default=PlexDefaults.PIN_CACHE_TTL, is_type_of=int),
+    Validator('plex.rate_limit.enabled', must_exist=True, default=PlexDefaults.RateLimit.ENABLED, is_type_of=bool),
+    Validator('plex.rate_limit.max_attempts', must_exist=True, default=PlexDefaults.RateLimit.MAX_ATTEMPTS, is_type_of=int),
+    Validator('plex.rate_limit.window_seconds', must_exist=True, default=PlexDefaults.RateLimit.WINDOW_SECONDS, is_type_of=int),
     Validator('plex.token', must_exist=True, default='', is_type_of=str),
 
     # proxy section
@@ -486,6 +527,216 @@ except ValidationError as e:
         if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
             settings[current_validator_details.names[0]] = current_validator_details.default
 
+
+# Plex OAuth helper functions
+def migrate_plex_config():
+    """
+    Migrate from old token-based configuration to new OAuth-based configuration.
+    This function should be called during application startup.
+    """
+    # Check if we need to migrate from old API key format
+    old_token = settings.get('plex.apikey')
+    if old_token and not settings.get('plex.legacy_token'):
+        logger.info("Migrating Plex configuration from API key to OAuth format")
+        
+        # Store the old token as legacy token
+        settings.set('plex.legacy_token', old_token)
+        settings.set('plex.auth_method', 'token')
+        
+        # Remove the old setting
+        try:
+            settings.remove('plex.apikey')
+        except:
+            pass  # Setting might not exist
+        
+        logger.info("Plex configuration migration completed")
+    
+    # Generate encryption key if not exists
+    if not settings.get('plex.encryption_key'):
+        logger.info("Generating new encryption key for Plex token storage")
+        key = Fernet.generate_key().decode()
+        settings.set('plex.encryption_key', key)
+    
+    # Set OAuth client version if not set
+    if not settings.get('plex.oauth.client_version'):
+        try:
+            # Try to get Bazarr version
+            from bazarr.app.version import get_version
+            settings.set('plex.oauth.client_version', get_version())
+        except ImportError:
+            # Fallback if version module doesn't exist
+            settings.set('plex.oauth.client_version', '1.0.0')
+
+
+def get_plex_settings():
+    """Get current Plex settings with defaults."""
+    plex_settings = {}
+    
+    # Build settings from PlexDefaults class
+    plex_settings['enabled'] = settings.get('plex.enabled', PlexDefaults.ENABLED)
+    plex_settings['auth_method'] = settings.get('plex.auth_method', PlexDefaults.AUTH_METHOD)
+    plex_settings['encryption_key'] = settings.get('plex.encryption_key', PlexDefaults.ENCRYPTION_KEY)
+    plex_settings['servers'] = settings.get('plex.servers', PlexDefaults.SERVERS)
+    plex_settings['selected_server'] = settings.get('plex.selected_server', PlexDefaults.SELECTED_SERVER)
+    plex_settings['token_refresh_interval'] = settings.get('plex.token_refresh_interval', PlexDefaults.TOKEN_REFRESH_INTERVAL)
+    plex_settings['connection_timeout'] = settings.get('plex.connection_timeout', PlexDefaults.CONNECTION_TIMEOUT)
+    plex_settings['legacy_token'] = settings.get('plex.legacy_token', PlexDefaults.LEGACY_TOKEN)
+    plex_settings['pin_cache_ttl'] = settings.get('plex.pin_cache_ttl', PlexDefaults.PIN_CACHE_TTL)
+    
+    # OAuth settings
+    plex_settings['oauth'] = {
+        'client_name': settings.get('plex.oauth.client_name', PlexDefaults.OAuth.CLIENT_NAME),
+        'client_version': settings.get('plex.oauth.client_version', PlexDefaults.OAuth.CLIENT_VERSION),
+        'platform': settings.get('plex.oauth.platform', PlexDefaults.OAuth.PLATFORM),
+        'device_name': settings.get('plex.oauth.device_name', PlexDefaults.OAuth.DEVICE_NAME)
+    }
+    
+    # Rate limit settings
+    plex_settings['rate_limit'] = {
+        'enabled': settings.get('plex.rate_limit.enabled', PlexDefaults.RateLimit.ENABLED),
+        'max_attempts': settings.get('plex.rate_limit.max_attempts', PlexDefaults.RateLimit.MAX_ATTEMPTS),
+        'window_seconds': settings.get('plex.rate_limit.window_seconds', PlexDefaults.RateLimit.WINDOW_SECONDS)
+    }
+    
+    return plex_settings
+
+
+def save_plex_server(server_data):
+    """Save selected Plex server configuration."""
+    servers = settings.get('plex.servers', [])
+    
+    # Check if server already exists
+    existing_index = None
+    for i, server in enumerate(servers):
+        if server.get('machineIdentifier') == server_data.get('machineIdentifier'):
+            existing_index = i
+            break
+    
+    if existing_index is not None:
+        # Update existing server
+        servers[existing_index] = server_data
+    else:
+        # Add new server
+        servers.append(server_data)
+    
+    settings.set('plex.servers', servers)
+    settings.set('plex.selected_server', server_data.get('machineIdentifier'))
+    
+    # Save settings
+    try:
+        write_config()
+    except:
+        pass  # Handle based on your settings implementation
+
+
+def get_selected_plex_server():
+    """Get the currently selected Plex server configuration."""
+    selected_id = settings.get('plex.selected_server')
+    if not selected_id:
+        return None
+    
+    servers = settings.get('plex.servers', [])
+    for server in servers:
+        if server.get('machineIdentifier') == selected_id:
+            return server
+    
+    return None
+
+
+def clear_plex_config():
+    """Clear all Plex configuration (used for logout)."""
+    # Clear all Plex settings
+    plex_keys = [
+        'plex.servers',
+        'plex.selected_server',
+        'plex.legacy_token'
+    ]
+    
+    for key in plex_keys:
+        try:
+            settings.remove(key)
+        except:
+            pass
+    
+    # Reset auth method
+    settings.set('plex.auth_method', 'oauth')
+    settings.set('plex.enabled', False)
+    
+    try:
+        write_config()
+    except:
+        pass
+
+
+def initialize_plex():
+    """
+    Initialize Plex configuration on startup.
+    Call this from your main application initialization.
+    """
+    # Run migration
+    migrate_plex_config()
+    
+    # Set defaults for any missing settings
+    defaults_map = {
+        'plex.enabled': PlexDefaults.ENABLED,
+        'plex.auth_method': PlexDefaults.AUTH_METHOD,
+        'plex.encryption_key': PlexDefaults.ENCRYPTION_KEY,
+        'plex.servers': PlexDefaults.SERVERS,
+        'plex.selected_server': PlexDefaults.SELECTED_SERVER,
+        'plex.oauth.client_name': PlexDefaults.OAuth.CLIENT_NAME,
+        'plex.oauth.client_version': PlexDefaults.OAuth.CLIENT_VERSION,
+        'plex.oauth.platform': PlexDefaults.OAuth.PLATFORM,
+        'plex.oauth.device_name': PlexDefaults.OAuth.DEVICE_NAME,
+        'plex.token_refresh_interval': PlexDefaults.TOKEN_REFRESH_INTERVAL,
+        'plex.connection_timeout': PlexDefaults.CONNECTION_TIMEOUT,
+        'plex.legacy_token': PlexDefaults.LEGACY_TOKEN,
+        'plex.pin_cache_ttl': PlexDefaults.PIN_CACHE_TTL,
+        'plex.rate_limit.enabled': PlexDefaults.RateLimit.ENABLED,
+        'plex.rate_limit.max_attempts': PlexDefaults.RateLimit.MAX_ATTEMPTS,
+        'plex.rate_limit.window_seconds': PlexDefaults.RateLimit.WINDOW_SECONDS,
+    }
+    
+    for setting_key, default_value in defaults_map.items():
+        if settings.get(setting_key) is None:
+            settings.set(setting_key, default_value)
+    
+    # Start cache cleanup if OAuth is enabled
+    if settings.get('plex.enabled') and settings.get('plex.auth_method') == 'oauth':
+        try:
+            from bazarr.api.plex.cache import start_cache_cleanup
+            start_cache_cleanup()
+            logger.info("Plex cache cleanup started")
+        except ImportError:
+            logger.warning("Could not start Plex cache cleanup - module not found")
+    
+    logger.info("Plex configuration initialized")
+
+
+def is_plex_enabled():
+    """Check if Plex integration is enabled."""
+    return settings.get('plex.enabled', False)
+
+
+def get_plex_auth_method():
+    """Get current Plex authentication method."""
+    return settings.get('plex.auth_method', 'oauth')
+
+
+def get_plex_encryption_key():
+    """Get Plex encryption key for token storage."""
+    key = settings.get('plex.encryption_key')
+    if not key:
+        # Generate if missing
+        key = Fernet.generate_key().decode()
+        settings.set('plex.encryption_key', key)
+        try:
+            write_config()
+        except:
+            pass
+    
+    return key
+
+
 # Additional validation and runtime configuration updates
 def validate_config():
     """Validate configuration settings after all modules are loaded."""
@@ -504,6 +755,9 @@ def validate_config():
                                  f"default value. This issue must be reported to and fixed by the development team. "
                                  f"Bazarr won't work until it's been fixed.")
                 stop_bazarr(EXIT_VALIDATION_ERROR)
+    
+    # Initialize Plex configuration
+    initialize_plex()
     
     # After validation, apply runtime configuration updates
     # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
