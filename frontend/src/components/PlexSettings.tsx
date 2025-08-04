@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { usePlexOAuth } from "../hooks/usePlexOAuth";
-import { usePlexServers } from "../hooks/usePlexServers";
+import { useEffect, useState } from "react";
+import React from "react";
+import { usePlexOAuth } from "@/hooks/usePlexOAuth";
+import { usePlexServers } from "@/hooks/usePlexServers";
 
 // You can replace these with your UI library components
 interface ButtonProps {
@@ -61,13 +62,13 @@ export const PlexSettings: React.FC = () => {
     cancelAuth,
     isPolling,
   } = usePlexOAuth({
-    onAuthSuccess: (data) => {
-      console.log("Authentication successful:", data);
+    onAuthSuccess: () => {
+      // Authentication successful
       // Fetch servers after successful auth
       fetchServers();
     },
-    onAuthError: (error) => {
-      console.error("Authentication failed:", error);
+    onAuthError: () => {
+      // Authentication failed
     },
   });
 
@@ -97,8 +98,10 @@ export const PlexSettings: React.FC = () => {
       await selectServer(selectedServerId);
       // Show success message or update UI
       alert("Server selected successfully!");
-    } catch (error: any) {
-      alert(`Failed to select server: ${error.message}`);
+    } catch (error) {
+      alert(
+        `Failed to select server: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     } finally {
       setIsSelectingServer(false);
     }
@@ -130,7 +133,7 @@ export const PlexSettings: React.FC = () => {
           <h4>Connect to Plex</h4>
           <p>Connect your Plex account to enable integration with Bazarr.</p>
           {authError && (
-            <Alert type="error" onClose={() => {}}>
+            <Alert type="error">
               {authError}
               {errorCode && <small> (Code: {errorCode})</small>}
             </Alert>

@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import axios from "axios";
+import { useCallback, useEffect, useRef, useState } from "react";
+import axios, { AxiosError } from "axios";
 
 interface PlexAuthState {
   isAuthenticated: boolean;
@@ -18,8 +18,8 @@ interface PinResponse {
 }
 
 interface UsePlexOAuthOptions {
-  onAuthSuccess?: (data: any) => void;
-  onAuthError?: (error: any) => void;
+  onAuthSuccess?: (data: unknown) => void;
+  onAuthError?: (error: unknown) => void;
   pollingInterval?: number;
   maxPollingAttempts?: number;
 }
@@ -96,10 +96,12 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
 
       setPinData(data);
       return data;
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as AxiosError<{ error?: string; code?: string }>;
       const errorMessage =
-        error.response?.data?.error || error.message || "Failed to create PIN";
-      const errorCode = error.response?.data?.code;
+        axiosError.response?.data?.error ||
+        (error instanceof Error ? error.message : "Failed to create PIN");
+      const errorCode = axiosError.response?.data?.code;
 
       setAuthState((prev) => ({
         ...prev,
@@ -139,9 +141,10 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
         }
 
         return false;
-      } catch (error: any) {
+      } catch (error) {
         // Handle specific error codes
-        const errorCode = error.response?.data?.code;
+        const axiosError = error as AxiosError<{ code?: string }>;
+        const errorCode = axiosError.response?.data?.code;
 
         if (errorCode === "PIN_EXPIRED") {
           cleanup();
