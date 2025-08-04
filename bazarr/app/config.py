@@ -983,7 +983,7 @@ def migrate_plex_config():
         from cryptography.fernet import Fernet
         key = Fernet.generate_key().decode()
         settings.plex.encryption_key = key
-        settings.save()
+        write_config()
 
 
 def initialize_plex():
