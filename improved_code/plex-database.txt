@@ -1,0 +1,128 @@
+"""
+Database schema updates for Plex OAuth integration.
+Add these to your existing database models.
+"""
+
+from sqlalchemy import Column, String, Text, DateTime, JSON
+from datetime import datetime
+
+# Add these columns to your User table (TableUser or similar)
+class PlexOAuthMixin:
+    """Mixin for Plex OAuth fields."""
+    
+    # Encrypted Plex token
+    plex_token = Column(Text, nullable=True)
+    
+    # Token last updated timestamp
+    plex_token_updated = Column(DateTime, nullable=True)
+    
+    # Plex username
+    plex_username = Column(String(255), nullable=True)
+    
+    # Plex email
+    plex_email = Column(String(255), nullable=True)
+    
+    # Plex user ID (from Plex API)
+    plex_user_id = Column(String(255), nullable=True)
+    
+    # List of authorized Plex servers (JSON)
+    plex_servers = Column(JSON, nullable=True, default=list)
+    
+    # Selected server machine identifier
+    plex_selected_server = Column(String(255), nullable=True)
+
+# Example of how to add to existing User model:
+"""
+class TableUser(Base, PlexOAuthMixin):
+    __tablename__ = 'table_user'
+    
+    id = Column(Integer, primary_key=True)
+    username = Column(String(255), nullable=False)
+    # ... other existing fields ...
+    
+    # PlexOAuthMixin fields will be included
+"""
+
+# Migration script (using Alembic or similar)
+"""
+def upgrade():
+    # Add Plex OAuth columns
+    op.add_column('table_user', Column('plex_token', Text, nullable=True))
+    op.add_column('table_user', Column('plex_token_updated', DateTime, nullable=True))
+    op.add_column('table_user', Column('plex_username', String(255), nullable=True))
+    op.add_column('table_user', Column('plex_email', String(255), nullable=True))
+    op.add_column('table_user', Column('plex_user_id', String(255), nullable=True))
+    op.add_column('table_user', Column('plex_servers', JSON, nullable=True))
+    op.add_column('table_user', Column('plex_selected_server', String(255), nullable=True))
+
+def downgrade():
+    # Remove Plex OAuth columns
+    op.drop_column('table_user', 'plex_token')
+    op.drop_column('table_user', 'plex_token_updated')
+    op.drop_column('table_user', 'plex_username')
+    op.drop_column('table_user', 'plex_email')
+    op.drop_column('table_user', 'plex_user_id')
+    op.drop_column('table_user', 'plex_servers')
+    op.drop_column('table_user', 'plex_selected_server')
+"""
+
+# Helper functions for user management
+def update_user_plex_auth(user_id, plex_data):
+    """Update user's Plex authentication data."""
+    from bazarr.app.database import database, TableUser
+    
+    user = database.execute(
+        database.select(TableUser).where(TableUser.id == user_id)
+    ).scalar()
+    
+    if user:
+        user.plex_token = plex_data.get('plex_token')
+        user.plex_token_updated = plex_data.get('plex_token_updated', datetime.utcnow())
+        user.plex_username = plex_data.get('plex_username')
+        user.plex_email = plex_data.get('plex_email')
+        user.plex_user_id = plex_data.get('plex_user_id')
+        
+        database.commit()
+        return True
+    
+    return False
+
+def clear_user_plex_auth(user_id):
+    """Clear user's Plex authentication data."""
+    from bazarr.app.database import database, TableUser
+    
+    user = database.execute(
+        database.select(TableUser).where(TableUser.id == user_id)
+    ).scalar()
+    
+    if user:
+        user.plex_token = None
+        user.plex_token_updated = None
+        user.plex_username = None
+        user.plex_email = None
+        user.plex_user_id = None
+        user.plex_servers = []
+        user.plex_selected_server = None
+        
+        database.commit()
+        return True
+    
+    return False
+
+def get_user_plex_token(user_id):
+    """Get decrypted Plex token for user."""
+    from bazarr.app.database import database, TableUser
+    from bazarr.api.plex.security import TokenManager
+    from bazarr.app.config import settings
+    
+    user = database.execute(
+        database.select(TableUser).where(TableUser.id == user_id)
+    ).scalar()
+    
+    if user and user.plex_token:
+        encryption_key = settings.get('plex.encryption_key')
+        if encryption_key:
+            token_manager = TokenManager(encryption_key)
+            return token_manager.decrypt_token(user.plex_token)
+    
+    return None

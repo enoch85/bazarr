@@ -1,0 +1,108 @@
+"""
+Add this to your existing config.py file in the appropriate sections.
+"""
+
+# Add to imports
+from cryptography.fernet import Fernet
+
+# Add to the configuration defaults
+PLEX_DEFAULTS = {
+    'enabled': False,
+    'auth_method': 'oauth',  # 'oauth' or 'token' for backward compatibility
+    'encryption_key': None,  # Generated on first run
+    'servers': [],  # List of configured servers
+    'selected_server': None,  # Currently selected server
+    'oauth': {
+        'client_name': 'Bazarr',
+        'client_version': None,  # Set to Bazarr version
+        'platform': 'Web',
+        'device_name': 'Bazarr Media Manager'
+    },
+    'token_refresh_interval': 86400,  # 24 hours in seconds
+    'connection_timeout': 10,
+    'legacy_token': None,  # For backward compatibility with API key
+    'pin_cache_ttl': 600,  # 10 minutes
+    'rate_limit': {
+        'enabled': True,
+        'max_attempts': 10,
+        'window_seconds': 300
+    }
+}
+
+def migrate_plex_config():
+    """
+    Migrate from old token-based configuration to new OAuth-based configuration.
+    This function should be called during application startup.
+    """
+    # Check if we need to migrate from old API key format
+    old_token = settings.get('plex.apikey')
+    if old_token and not settings.get('plex.legacy_token'):
+        logger.info("Migrating Plex configuration from API key to OAuth format")
+        
+        # Store the old token as legacy token
+        settings.set('plex.legacy_token', old_token)
+        settings.set('plex.auth_method', 'token')
+        
+        # Remove the old setting
+        settings.remove('plex.apikey')
+        
+        logger.info("Plex configuration migration completed")
+    
+    # Generate encryption key if not exists
+    if not settings.get('plex.encryption_key'):
+        logger.info("Generating new encryption key for Plex token storage")
+        key = Fernet.generate_key().decode()
+        settings.set('plex.encryption_key', key)
+    
+    # Set OAuth client version if not set
+    if not settings.get('plex.oauth.client_version'):
+        from bazarr.app.version import get_version
+        settings.set('plex.oauth.client_version', get_version())
+
+def get_plex_settings():
+    """Get current Plex settings with defaults."""
+    plex_settings = {}
+    
+    for key, default_value in PLEX_DEFAULTS.items():
+        setting_key = f'plex.{key}'
+        if isinstance(default_value, dict):
+            # Handle nested settings
+            plex_settings[key] = {}
+            for sub_key, sub_default in default_value.items():
+                sub_setting_key = f'plex.{key}.{sub_key}'
+                plex_settings[key][sub_key] = settings.get(sub_setting_key, sub_default)
+        else:
+            plex_settings[key] = settings.get(setting_key, default_value)
+    
+    return plex_settings
+
+def save_plex_server(server_data):
+    """Save selected Plex server configuration."""
+    servers = settings.get('plex.servers', [])
+    
+    # Check if server already exists
+    existing_index = None
+    for i, server in enumerate(servers):
+        if server['machineIdentifier'] == server_data['machineIdentifier']:
+            existing_index = i
+            break
+    
+    if existing_index is not None:
+        # Update existing server
+        servers[existing_index] = server_data
+    else:
+        # Add new server
+        servers.append(server_data)
+    
+    settings.set('plex.servers', servers)
+    settings.set('plex.selected_server', server_data['machineIdentifier'])
+
+# Add to application startup
+def initialize_plex():
+    """Initialize Plex configuration on startup."""
+    migrate_plex_config()
+    
+    # Start cache cleanup if OAuth is enabled
+    if settings.get('plex.enabled') and settings.get('plex.auth_method') == 'oauth':
+        from bazarr.api.plex.cache import start_cache_cleanup
+        start_cache_cleanup()

@@ -1,0 +1,257 @@
+"""
+Plex OAuth Configuration for Bazarr
+Add this section to your existing config.py file
+"""
+
+# ==================== ADD TO IMPORTS SECTION ====================
+from cryptography.fernet import Fernet
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ==================== ADD TO CONFIGURATION SECTION ====================
+# Plex Configuration Defaults
+PLEX_DEFAULTS = {
+    'enabled': False,
+    'auth_method': 'oauth',  # 'oauth' or 'token' for backward compatibility
+    'encryption_key': None,  # Generated on first run
+    'servers': [],  # List of configured servers
+    'selected_server': None,  # Currently selected server
+    'oauth': {
+        'client_name': 'Bazarr',
+        'client_version': None,  # Set to Bazarr version
+        'platform': 'Web',
+        'device_name': 'Bazarr Media Manager'
+    },
+    'token_refresh_interval': 86400,  # 24 hours in seconds
+    'connection_timeout': 10,
+    'legacy_token': None,  # For backward compatibility with API key
+    'pin_cache_ttl': 600,  # 10 minutes
+    'rate_limit': {
+        'enabled': True,
+        'max_attempts': 10,
+        'window_seconds': 300
+    }
+}
+
+# ==================== ADD THESE FUNCTIONS ====================
+def migrate_plex_config():
+    """
+    Migrate from old token-based configuration to new OAuth-based configuration.
+    This function should be called during application startup.
+    """
+    from bazarr.app.config import settings
+    
+    # Check if we need to migrate from old API key format
+    old_token = settings.get('plex.apikey')
+    if old_token and not settings.get('plex.legacy_token'):
+        logger.info("Migrating Plex configuration from API key to OAuth format")
+        
+        # Store the old token as legacy token
+        settings.set('plex.legacy_token', old_token)
+        settings.set('plex.auth_method', 'token')
+        
+        # Remove the old setting
+        try:
+            settings.remove('plex.apikey')
+        except:
+            pass  # Setting might not exist
+        
+        logger.info("Plex configuration migration completed")
+    
+    # Generate encryption key if not exists
+    if not settings.get('plex.encryption_key'):
+        logger.info("Generating new encryption key for Plex token storage")
+        key = Fernet.generate_key().decode()
+        settings.set('plex.encryption_key', key)
+    
+    # Set OAuth client version if not set
+    if not settings.get('plex.oauth.client_version'):
+        try:
+            # Try to get Bazarr version
+            from bazarr.app.version import get_version
+            settings.set('plex.oauth.client_version', get_version())
+        except ImportError:
+            # Fallback if version module doesn't exist
+            settings.set('plex.oauth.client_version', '1.0.0')
+
+def get_plex_settings():
+    """Get current Plex settings with defaults."""
+    from bazarr.app.config import settings
+    
+    plex_settings = {}
+    
+    for key, default_value in PLEX_DEFAULTS.items():
+        setting_key = f'plex.{key}'
+        if isinstance(default_value, dict):
+            # Handle nested settings
+            plex_settings[key] = {}
+            for sub_key, sub_default in default_value.items():
+                sub_setting_key = f'plex.{key}.{sub_key}'
+                plex_settings[key][sub_key] = settings.get(sub_setting_key, sub_default)
+        else:
+            plex_settings[key] = settings.get(setting_key, default_value)
+    
+    return plex_settings
+
+def save_plex_server(server_data):
+    """Save selected Plex server configuration."""
+    from bazarr.app.config import settings
+    
+    servers = settings.get('plex.servers', [])
+    
+    # Check if server already exists
+    existing_index = None
+    for i, server in enumerate(servers):
+        if server.get('machineIdentifier') == server_data.get('machineIdentifier'):
+            existing_index = i
+            break
+    
+    if existing_index is not None:
+        # Update existing server
+        servers[existing_index] = server_data
+    else:
+        # Add new server
+        servers.append(server_data)
+    
+    settings.set('plex.servers', servers)
+    settings.set('plex.selected_server', server_data.get('machineIdentifier'))
+    
+    # Save settings
+    try:
+        settings.save()
+    except:
+        pass  # Handle based on your settings implementation
+
+def get_selected_plex_server():
+    """Get the currently selected Plex server configuration."""
+    from bazarr.app.config import settings
+    
+    selected_id = settings.get('plex.selected_server')
+    if not selected_id:
+        return None
+    
+    servers = settings.get('plex.servers', [])
+    for server in servers:
+        if server.get('machineIdentifier') == selected_id:
+            return server
+    
+    return None
+
+def clear_plex_config():
+    """Clear all Plex configuration (used for logout)."""
+    from bazarr.app.config import settings
+    
+    # Clear all Plex settings
+    plex_keys = [
+        'plex.servers',
+        'plex.selected_server',
+        'plex.legacy_token'
+    ]
+    
+    for key in plex_keys:
+        try:
+            settings.remove(key)
+        except:
+            pass
+    
+    # Reset auth method
+    settings.set('plex.auth_method', 'oauth')
+    settings.set('plex.enabled', False)
+    
+    try:
+        settings.save()
+    except:
+        pass
+
+# ==================== ADD TO APPLICATION INITIALIZATION ====================
+def initialize_plex():
+    """
+    Initialize Plex configuration on startup.
+    Call this from your main application initialization.
+    """
+    from bazarr.app.config import settings
+    
+    # Run migration
+    migrate_plex_config()
+    
+    # Set defaults for any missing settings
+    for key, default_value in PLEX_DEFAULTS.items():
+        if isinstance(default_value, dict):
+            for sub_key, sub_default in default_value.items():
+                setting_key = f'plex.{key}.{sub_key}'
+                if settings.get(setting_key) is None:
+                    settings.set(setting_key, sub_default)
+        else:
+            setting_key = f'plex.{key}'
+            if settings.get(setting_key) is None:
+                settings.set(setting_key, default_value)
+    
+    # Start cache cleanup if OAuth is enabled
+    if settings.get('plex.enabled') and settings.get('plex.auth_method') == 'oauth':
+        try:
+            from bazarr.api.plex.cache import start_cache_cleanup
+            start_cache_cleanup()
+            logger.info("Plex cache cleanup started")
+        except ImportError:
+            logger.warning("Could not start Plex cache cleanup - module not found")
+    
+    logger.info("Plex configuration initialized")
+
+# ==================== HELPER FUNCTIONS ====================
+def is_plex_enabled():
+    """Check if Plex integration is enabled."""
+    from bazarr.app.config import settings
+    return settings.get('plex.enabled', False)
+
+def get_plex_auth_method():
+    """Get current Plex authentication method."""
+    from bazarr.app.config import settings
+    return settings.get('plex.auth_method', 'oauth')
+
+def get_plex_encryption_key():
+    """Get Plex encryption key for token storage."""
+    from bazarr.app.config import settings
+    
+    key = settings.get('plex.encryption_key')
+    if not key:
+        # Generate if missing
+        key = Fernet.generate_key().decode()
+        settings.set('plex.encryption_key', key)
+        try:
+            settings.save()
+        except:
+            pass
+    
+    return key
+
+# ==================== EXAMPLE USAGE ====================
+"""
+# In your main application file (e.g., main.py or __init__.py):
+
+from bazarr.app.config import initialize_plex
+
+# During application startup:
+initialize_plex()
+
+# To check if Plex is enabled:
+from bazarr.app.config import is_plex_enabled
+if is_plex_enabled():
+    # Initialize Plex features
+    pass
+
+# To get Plex settings:
+from bazarr.app.config import get_plex_settings
+plex_config = get_plex_settings()
+
+# To save a Plex server:
+from bazarr.app.config import save_plex_server
+save_plex_server({
+    'name': 'My Plex Server',
+    'machineIdentifier': 'abc123',
+    'connection': {
+        'uri': 'https://192.168.1.100:32400',
+        'local': True
+    }
+})
+"""
