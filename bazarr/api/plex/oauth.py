@@ -139,7 +139,12 @@ class PlexPin(Resource):
     def post(self):
         """Create Plex OAuth PIN."""
         try:
-            data = request.get_json() or {}
+            # Handle both JSON and form data, with fallback to empty dict
+            try:
+                data = request.get_json() or {}
+            except:
+                data = {}
+            
             client_id = data.get('clientId', generate_client_id())
             
             headers = {

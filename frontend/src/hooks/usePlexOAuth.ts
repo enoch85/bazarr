@@ -91,7 +91,7 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
     setAuthState((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
     try {
-      const response = await axios.post("/api/plex/oauth/pin");
+      const response = await axios.post("/api/plex/oauth/pin", {});
       const data: PinResponse = response.data;
 
       setPinData(data);
@@ -244,7 +244,7 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
     setAuthState((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      await axios.post("/api/plex/oauth/logout");
+      await axios.post("/api/plex/oauth/logout", {});
       setAuthState({
         isAuthenticated: false,
         isLoading: false,
