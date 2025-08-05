@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Group,
+  Paper,
   Select,
   Stack,
   Text,
@@ -100,7 +101,7 @@ export const PlexSettings: React.FC = () => {
 
     if (isPolling && pinData) {
       return (
-        <Card withBorder radius="md" p="lg">
+        <Paper withBorder radius="md" p="lg">
           <Stack gap="md">
             <Title order={4}>Plex OAuth (recommended)</Title>
             <Stack gap="sm">
@@ -126,13 +127,13 @@ export const PlexSettings: React.FC = () => {
               </Button>
             </Stack>
           </Stack>
-        </Card>
+        </Paper>
       );
     }
 
     if (!isAuthenticated) {
       return (
-        <Card withBorder radius="md" p="lg">
+        <Paper withBorder radius="md" p="lg">
           <Stack gap="md">
             <Title order={4}>Plex OAuth (recommended)</Title>
             <Stack gap="sm">
@@ -157,22 +158,16 @@ export const PlexSettings: React.FC = () => {
               </Button>
             </Stack>
           </Stack>
-        </Card>
+        </Paper>
       );
     }
 
     return (
-      <Card withBorder radius="md" p="lg">
+      <Paper withBorder radius="md" p="lg">
         <Stack gap="md">
           <Title order={4}>Plex OAuth (recommended)</Title>
           <Alert color="brand" variant="light">
-            <Text fw={500}>
-              Connected as{" "}
-              <Text component="span" fw={700}>
-                {username}
-              </Text>{" "}
-              ({email})
-            </Text>
+            Connected as {username} ({email})
           </Alert>
           <Button
             onClick={logout}
@@ -184,7 +179,7 @@ export const PlexSettings: React.FC = () => {
             Disconnect from Plex
           </Button>
         </Stack>
-      </Card>
+      </Paper>
     );
   };
 
@@ -192,7 +187,7 @@ export const PlexSettings: React.FC = () => {
     if (!isAuthenticated) return null;
 
     return (
-      <Card withBorder radius="md" p="lg" style={{ marginTop: "20px" }}>
+      <Paper withBorder radius="md" p="lg" style={{ marginTop: "20px" }}>
         <Stack gap="lg">
           <Title order={4}>Plex Servers</Title>
 
@@ -252,20 +247,14 @@ export const PlexSettings: React.FC = () => {
 
               {serverSaved && selectedServer && (
                 <Alert color="brand" variant="light">
-                  <Group gap="xs">
-                    <Text fw={500}>Server saved:</Text>
-                    <Text>
-                      "{selectedServer.name}" (v
-                      {servers.find(
-                        (s) =>
-                          s.machineIdentifier ===
-                          selectedServer.machineIdentifier,
-                      )?.version ||
-                        selectedServer.version ||
-                        "Unknown"}
-                      )
-                    </Text>
-                  </Group>
+                  Server saved: "{selectedServer.name}" (v
+                  {servers.find(
+                    (s) =>
+                      s.machineIdentifier === selectedServer.machineIdentifier,
+                  )?.version ||
+                    selectedServer.version ||
+                    "Unknown"}
+                  )
                 </Alert>
               )}
 
@@ -302,7 +291,7 @@ export const PlexSettings: React.FC = () => {
             </Stack>
           )}
         </Stack>
-      </Card>
+      </Paper>
     );
   };
 
