@@ -1,4 +1,4 @@
-import { FunctionComponent } from "react";
+import { FunctionComponent, useState } from "react";
 
 import {
   Check,
@@ -11,29 +11,115 @@ import {
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
 import PlexSettings from "@/components/PlexSettings";
+import {
+  Stack,
+  Paper,
+  Text as MantineText,
+  Button,
+  Group,
+  Alert,
+  Collapse,
+  Badge,
+  Box,
+  Card,
+} from "@mantine/core";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconAlertCircle,
+  IconSettings,
+} from "@tabler/icons-react";
 
 const SettingsPlexView: FunctionComponent = () => {
+  const [manualConfigOpen, setManualConfigOpen] = useState(false);
+
   return (
     <Layout name="Interface">
       <Section header="Use Plex operations">
         <Check label="Enabled" settingKey={plexEnabledKey}></Check>
       </Section>
       <CollapseBox settingKey={plexEnabledKey}>
-        <Section header="Authentication">
-          <PlexSettings />
-          <Message>Connect to Plex using OAuth for secure authentication</Message>
-        </Section>
-        <Section header="Host (Manual Configuration)">
-          <Text label="Address" settingKey="settings-plex-ip"></Text>
-          <Number
-            label="Port"
-            settingKey="settings-plex-port"
-            defaultValue={32400}
-          ></Number>
-          <Message>Hostname or IPv4 Address (only needed if not using OAuth)</Message>
-          <Text label="API Token" settingKey="settings-plex-apikey"></Text>
-          <Check label="SSL" settingKey="settings-plex-ssl"></Check>
-        </Section>
+        {/* New Beautiful Authentication Section */}
+        <Paper p="xl" radius="md" withBorder style={{ marginBottom: "20px" }}>
+          <Stack gap="lg">
+            <MantineText size="xl" fw={600} c="dark.8">
+              How would you like to authenticate?
+            </MantineText>
+
+            {/* OAuth Section - Prominent */}
+            <Card
+              padding="xl"
+              radius="md"
+              style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <Badge
+                color="yellow"
+                variant="filled"
+                size="lg"
+                style={{
+                  position: "absolute",
+                  top: 15,
+                  right: 15,
+                  fontWeight: 700,
+                }}
+              >
+                recommended
+              </Badge>
+
+              <PlexSettings />
+            </Card>
+
+            {/* Manual Configuration - Collapsible */}
+            <Box>
+              <Button
+                variant="subtle"
+                color="gray"
+                size="md"
+                leftSection={manualConfigOpen ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                rightSection={<IconSettings size={16} />}
+                onClick={() => setManualConfigOpen(!manualConfigOpen)}
+                style={{
+                  fontWeight: 500,
+                  color: "#868e96",
+                }}
+              >
+                Manual Configuration (click to expand)
+              </Button>
+
+              <Collapse in={manualConfigOpen}>
+                <Paper p="lg" mt="sm" radius="md" style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}>
+                  <Stack gap="md">
+                    <Alert
+                      icon={<IconAlertCircle size={16} />}
+                      color="blue"
+                      variant="light"
+                    >
+                      This manual configuration is not needed when using Plex OAuth above.
+                    </Alert>
+
+                    <Group grow>
+                      <Text label="Address" settingKey="settings-plex-ip"></Text>
+                      <Number
+                        label="Port"
+                        settingKey="settings-plex-port"
+                        defaultValue={32400}
+                      ></Number>
+                    </Group>
+
+                    <Text label="API Token" settingKey="settings-plex-apikey"></Text>
+                    <Check label="SSL" settingKey="settings-plex-ssl"></Check>
+                  </Stack>
+                </Paper>
+              </Collapse>
+            </Box>
+          </Stack>
+        </Paper>
+
         <Section header="Movie library">
           <Text
             label="Name of the library"

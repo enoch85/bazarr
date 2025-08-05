@@ -2,51 +2,22 @@ import { useEffect, useState } from "react";
 import React from "react";
 import { usePlexOAuth } from "@/hooks/usePlexOAuth";
 import { usePlexServers } from "@/hooks/usePlexServers";
-
-// You can replace these with your UI library components
-interface ButtonProps {
-  onClick?: () => void;
-  disabled?: boolean;
-  variant?: "primary" | "danger" | "secondary";
-  loading?: boolean;
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}
-
-const Button: React.FC<ButtonProps> = ({
-  onClick,
-  disabled,
-  variant = "primary",
-  loading,
-  children,
-  style,
-}) => (
-  <button
-    onClick={onClick}
-    disabled={disabled || loading}
-    className={`btn btn-${variant}`}
-    style={style}
-  >
-    {loading ? "Loading..." : children}
-  </button>
-);
-
-interface AlertProps {
-  type: "success" | "error" | "warning" | "info";
-  children: React.ReactNode;
-  onClose?: () => void;
-}
-
-const Alert: React.FC<AlertProps> = ({ type, children, onClose }) => (
-  <div className={`alert alert-${type}`}>
-    {children}
-    {onClose && (
-      <button onClick={onClose} className="close">
-        &times;
-      </button>
-    )}
-  </div>
-);
+import {
+  Stack,
+  Text,
+  Button,
+  Group,
+  Select,
+  Alert,
+  Card,
+  ActionIcon,
+} from "@mantine/core";
+import {
+  IconCheck,
+  IconBrandPlex,
+  IconServer,
+  IconRefresh,
+} from "@tabler/icons-react";
 
 export const PlexSettings: React.FC = () => {
   const {
@@ -63,8 +34,6 @@ export const PlexSettings: React.FC = () => {
     isPolling,
   } = usePlexOAuth({
     onAuthSuccess: () => {
-      // Authentication successful
-      // Fetch servers after successful auth
       fetchServers();
     },
     onAuthError: () => {
@@ -74,14 +43,18 @@ export const PlexSettings: React.FC = () => {
 
   const {
     servers,
+    selectedServer,
     isLoading: serversLoading,
     error: serversError,
     fetchServers,
     selectServer,
+    getSelectedServer,
+    setSelectedServer,
   } = usePlexServers();
 
-  const [selectedServerId, setSelectedServerId] = useState<string>("");
+  const [localSelectedServerId, setLocalSelectedServerId] = useState<string>("");
   const [isSelectingServer, setIsSelectingServer] = useState(false);
+  const [serverSaved, setServerSaved] = useState(false);
 
   // Fetch servers when authenticated
   useEffect(() => {
@@ -90,18 +63,34 @@ export const PlexSettings: React.FC = () => {
     }
   }, [isAuthenticated, servers.length, fetchServers]);
 
+  // Load selected server on mount
+  useEffect(() => {
+    const loadSelectedServer = async () => {
+      const saved = await getSelectedServer();
+      if (saved) {
+        setSelectedServer(saved);
+        setLocalSelectedServerId(saved.machineIdentifier);
+        setServerSaved(true);
+      }
+    };
+    if (isAuthenticated) {
+      loadSelectedServer();
+    }
+  }, [isAuthenticated, getSelectedServer, setSelectedServer]);
+
   const handleServerSelect = async () => {
-    if (!selectedServerId) return;
+    if (!localSelectedServerId) return;
 
     setIsSelectingServer(true);
     try {
-      await selectServer(selectedServerId);
-      // Show success message or update UI
-      alert("Server selected successfully!");
+      const server = servers.find((s: any) => s.machineIdentifier === localSelectedServerId);
+      if (server && server.bestConnection) {
+        await selectServer(localSelectedServerId);
+        setSelectedServer(server);
+        setServerSaved(true);
+      }
     } catch (error) {
-      alert(
-        `Failed to select server: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      console.error('Failed to select server:', error);
     } finally {
       setIsSelectingServer(false);
     }
@@ -109,51 +98,96 @@ export const PlexSettings: React.FC = () => {
 
   const renderAuthSection = () => {
     if (authLoading && !isPolling) {
-      return <div>Loading...</div>;
+      return <Text>Loading...</Text>;
     }
 
     if (isPolling && pinData) {
       return (
-        <div className="auth-polling">
-          <h4>Complete Authentication</h4>
-          <p>
-            PIN Code: <strong>{pinData.code}</strong>
-          </p>
-          <p>Complete the authentication in the opened window.</p>
-          <Button onClick={cancelAuth} variant="secondary">
-            Cancel
-          </Button>
-        </div>
+        <Stack gap="md">
+          <Group gap="sm">
+            <IconBrandPlex size={28} />
+            <Text size="xl" fw={700}>
+              Plex OAuth (Automated setup)
+            </Text>
+          </Group>
+          <Stack gap="sm">
+            <Text size="lg" fw={600}>Complete Authentication</Text>
+            <Text>
+              PIN Code: <Text component="span" fw={700}>{pinData.code}</Text>
+            </Text>
+            <Text size="sm" style={{ opacity: 0.9 }}>
+              Complete the authentication in the opened window.
+            </Text>
+            <Button onClick={cancelAuth} variant="white" color="dark" size="sm">
+              Cancel
+            </Button>
+          </Stack>
+        </Stack>
       );
     }
 
     if (!isAuthenticated) {
       return (
-        <div className="auth-section">
-          <h4>Connect to Plex</h4>
-          <p>Connect your Plex account to enable integration with Bazarr.</p>
-          {authError && (
-            <Alert type="error">
-              {authError}
-              {errorCode && <small> (Code: {errorCode})</small>}
-            </Alert>
-          )}
-          <Button onClick={() => startAuth()} variant="primary">
-            Connect to Plex
-          </Button>
-        </div>
+        <Stack gap="md">
+          <Group gap="sm">
+            <IconBrandPlex size={28} />
+            <Text size="xl" fw={700}>
+              Plex OAuth (Automated setup)
+            </Text>
+          </Group>
+          <Stack gap="sm">
+            <Text size="sm" style={{ opacity: 0.9 }}>
+              Connect your Plex account to enable secure, automated integration with Bazarr.
+            </Text>
+            {authError && (
+              <Alert color="red" variant="light">
+                {authError}
+                {errorCode && <Text size="xs"> (Code: {errorCode})</Text>}
+              </Alert>
+            )}
+            <Button
+              onClick={() => startAuth()}
+              variant="white"
+              color="dark"
+              size="md"
+              leftSection={<IconBrandPlex size={18} />}
+              style={{ alignSelf: "flex-start" }}
+            >
+              Connect to Plex
+            </Button>
+          </Stack>
+        </Stack>
       );
     }
 
     return (
-      <div className="auth-info">
-        <Alert type="success">
-          Connected as <strong>{username}</strong> ({email})
+      <Stack gap="md">
+        <Group gap="sm">
+          <IconBrandPlex size={28} />
+          <Text size="xl" fw={700}>
+            Plex OAuth (Automated setup)
+          </Text>
+        </Group>
+        <Alert
+          icon={<IconCheck size={16} />}
+          color="teal"
+          variant="light"
+          style={{ backgroundColor: "rgba(255,255,255,0.9)", color: "#2f9e44" }}
+        >
+          <Text fw={500}>
+            Connected as <Text component="span" fw={700}>{username}</Text> ({email})
+          </Text>
         </Alert>
-        <Button onClick={logout} variant="danger">
+        <Button
+          onClick={logout}
+          variant="white"
+          color="dark"
+          size="sm"
+          style={{ alignSelf: "flex-start" }}
+        >
           Disconnect from Plex
         </Button>
-      </div>
+      </Stack>
     );
   };
 
@@ -161,90 +195,113 @@ export const PlexSettings: React.FC = () => {
     if (!isAuthenticated) return null;
 
     return (
-      <div className="server-section" style={{ marginTop: "20px" }}>
-        <h4>Plex Servers</h4>
+      <Card p="xl" radius="md" withBorder style={{ marginTop: "20px" }}>
+        <Stack gap="lg">
+          <Group gap="sm">
+            <IconServer size={24} color="#667eea" />
+            <Text size="xl" fw={600} c="dark.8">
+              Plex Servers
+            </Text>
+          </Group>
 
-        {serversError && (
-          <Alert type="error">Failed to load servers: {serversError}</Alert>
-        )}
+          {serversError && (
+            <Alert color="red" variant="light">
+              Failed to load servers: {serversError}
+            </Alert>
+          )}
 
-        {serversLoading ? (
-          <div>Loading servers...</div>
-        ) : servers.length === 0 ? (
-          <div>
-            <p>No servers found.</p>
-            <Button onClick={fetchServers} variant="secondary">
-              Refresh
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <div className="server-select">
-              <select
-                value={selectedServerId}
-                onChange={(e) => setSelectedServerId(e.target.value)}
-                disabled={isSelectingServer}
-                style={{ marginRight: "10px" }}
-              >
-                <option value="">Select a server...</option>
-                {servers.map((server) => (
-                  <option
-                    key={server.machineIdentifier}
-                    value={server.machineIdentifier}
-                    disabled={!server.bestConnection}
-                  >
-                    {server.name} ({server.platform} - v{server.version})
-                    {!server.bestConnection && " (Unavailable)"}
-                  </option>
-                ))}
-              </select>
-              <Button
-                onClick={handleServerSelect}
-                disabled={!selectedServerId || isSelectingServer}
-                loading={isSelectingServer}
-                variant="primary"
-              >
-                Select Server
-              </Button>
-              <Button
-                onClick={fetchServers}
-                variant="secondary"
-                style={{ marginLeft: "10px" }}
-              >
+          {serversLoading ? (
+            <Text>Loading servers...</Text>
+          ) : servers.length === 0 ? (
+            <Stack gap="sm">
+              <Text>No servers found.</Text>
+              <Button onClick={fetchServers} variant="light" color="gray">
                 Refresh
               </Button>
-            </div>
+            </Stack>
+          ) : (
+            <Stack gap="md">
+              <Group gap="md" align="end">
+                <Select
+                  label="Select your Plex server"
+                  placeholder="Choose a server..."
+                  data={servers.map((server: any) => ({
+                    value: server.machineIdentifier,
+                    label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? ' (Unavailable)' : ''}`,
+                    disabled: !server.bestConnection
+                  }))}
+                  value={localSelectedServerId}
+                  onChange={(value: any) => setLocalSelectedServerId(value || "")}
+                  style={{ flex: 1 }}
+                  searchable
+                />
+                <Button
+                  variant="filled"
+                  color="blue"
+                  disabled={!localSelectedServerId || isSelectingServer}
+                  loading={isSelectingServer}
+                  leftSection={<IconCheck size={16} />}
+                  onClick={handleServerSelect}
+                >
+                  Select Server
+                </Button>
+                <ActionIcon
+                  variant="light"
+                  color="gray"
+                  size="lg"
+                  onClick={fetchServers}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Group>
 
-            {selectedServerId && (
-              <div className="server-details" style={{ marginTop: "10px" }}>
-                {servers
-                  .filter((s) => s.machineIdentifier === selectedServerId)
-                  .map((server) => (
-                    <div key={server.machineIdentifier}>
-                      <h5>Connections:</h5>
-                      <ul>
-                        {server.connections.map((conn, idx) => (
-                          <li key={idx}>
-                            {conn.protocol}://{conn.address}:{conn.port}
-                            {conn.local && " (Local)"}
-                            {conn.available ? " ✓" : " ✗"}
-                            {conn.latency && ` - ${conn.latency}ms`}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              {serverSaved && selectedServer && (
+                <Alert
+                  icon={<IconCheck size={16} />}
+                  color="green"
+                  variant="light"
+                  style={{ backgroundColor: "#f3f9f3" }}
+                >
+                  <Group gap="xs">
+                    <Text fw={500}>Server saved:</Text>
+                    <Text>"{selectedServer.name}" ({selectedServer.bestConnection?.uri})</Text>
+                  </Group>
+                </Alert>
+              )}
+
+              {localSelectedServerId && (
+                <Card p="md" radius="md" style={{ backgroundColor: "#f8f9fa" }}>
+                  <Text size="sm" fw={600} mb="xs" c="dark.7">
+                    Available Connections:
+                  </Text>
+                  <Stack gap="xs">
+                    {servers
+                      .filter((s: any) => s.machineIdentifier === localSelectedServerId)
+                      .map((server: any) => 
+                        server.connections.map((conn: any, idx: number) => (
+                          <Group gap="xs" key={idx}>
+                            <IconCheck size={14} color={conn.available ? "#51cf66" : "#fa5252"} />
+                            <Text size="sm">
+                              {conn.uri}
+                              {conn.local && " (Local)"}
+                              {conn.available ? " ✓" : " ✗"}
+                              {conn.latency && ` - ${conn.latency}ms`}
+                            </Text>
+                          </Group>
+                        ))
+                      )}
+                  </Stack>
+                </Card>
+              )}
+            </Stack>
+          )}
+        </Stack>
+      </Card>
     );
   };
 
   return (
-    <div className="plex-settings">
-      <h3>Plex Integration</h3>
+    <div>
       {renderAuthSection()}
       {renderServerSection()}
     </div>

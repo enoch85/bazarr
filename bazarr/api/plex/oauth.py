@@ -470,6 +470,25 @@ class PlexTestConnection(Resource):
 
 @api_ns_plex.route('plex/select-server')
 class PlexSelectServer(Resource):
+    def get(self):
+        """Get currently selected Plex server."""
+        try:
+            server_info = {
+                'machineIdentifier': settings.plex.get('server_machine_id'),
+                'name': settings.plex.get('server_name'),
+                'url': settings.plex.get('server_url'),
+                'local': settings.plex.get('server_local', False)
+            }
+            
+            # Only return server info if we have a machine identifier
+            if server_info['machineIdentifier']:
+                return {'server': server_info}
+            else:
+                return {'server': None}
+                
+        except Exception as e:
+            return {'server': None}
+    
     def post(self):
         """Select a specific Plex server to use."""
         data = request.get_json()

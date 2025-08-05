@@ -33,6 +33,8 @@ export const usePlexServers = () => {
     isLoading: false,
   });
 
+  const [selectedServer, setSelectedServer] = useState<PlexServer | null>(null);
+
   const getBestConnection = (
     connections: PlexServerConnection[],
   ): PlexServerConnection | null => {
@@ -145,12 +147,24 @@ export const usePlexServers = () => {
     }
   };
 
+  const getSelectedServer = useCallback(async () => {
+    try {
+      const response = await axios.get("/api/plex/select-server");
+      return response.data.server;
+    } catch (error) {
+      return null;
+    }
+  }, []);
+
   return {
     servers: state.servers,
+    selectedServer,
     isLoading: state.isLoading,
     error: state.error,
     fetchServers,
     refreshServers,
     selectServer,
+    getSelectedServer,
+    setSelectedServer,
   };
 };
