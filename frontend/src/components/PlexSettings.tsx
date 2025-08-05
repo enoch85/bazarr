@@ -104,7 +104,7 @@ export const PlexSettings: React.FC = () => {
 
     if (isPolling && pinData) {
       return (
-        <Card withBorder radius="md" p="lg">
+        <Card withBorder radius="md" p="lg" bg={isDark ? "dark.6" : "gray.0"}>
           <Stack gap="md">
             <Title order={3}>Plex OAuth (Automated setup)</Title>
             <Stack gap="sm">
@@ -136,7 +136,7 @@ export const PlexSettings: React.FC = () => {
 
     if (!isAuthenticated) {
       return (
-        <Card withBorder radius="md" p="lg">
+        <Card withBorder radius="md" p="lg" bg={isDark ? "dark.6" : "gray.0"}>
           <Stack gap="md">
             <Title order={3}>Plex OAuth (Automated setup)</Title>
             <Stack gap="sm">
@@ -166,7 +166,7 @@ export const PlexSettings: React.FC = () => {
     }
 
     return (
-      <Card withBorder radius="md" p="lg">
+      <Card withBorder radius="md" p="lg" bg={isDark ? "dark.6" : "gray.0"}>
         <Stack gap="md">
           <Title order={3}>Plex OAuth (Automated setup)</Title>
           <Alert color="brand" variant="light">
@@ -196,7 +196,13 @@ export const PlexSettings: React.FC = () => {
     if (!isAuthenticated) return null;
 
     return (
-      <Card withBorder radius="md" p="lg" style={{ marginTop: "20px" }}>
+      <Card
+        withBorder
+        radius="md"
+        p="lg"
+        style={{ marginTop: "20px" }}
+        bg={isDark ? "dark.6" : "gray.0"}
+      >
         <Stack gap="lg">
           <Title order={3}>Plex Servers</Title>
 
@@ -207,7 +213,9 @@ export const PlexSettings: React.FC = () => {
           )}
 
           {serversLoading ? (
-            <Text>Loading servers...</Text>
+            <Stack gap="sm">
+              <Text>Loading servers...</Text>
+            </Stack>
           ) : servers.length === 0 ? (
             <Stack gap="sm">
               <Text>No servers found.</Text>
@@ -265,19 +273,10 @@ export const PlexSettings: React.FC = () => {
 
               {localSelectedServerId && (
                 <Card
-                  withBorder={false}
+                  withBorder
                   p="md"
                   radius="md"
-                  style={{
-                    backgroundColor: isDark
-                      ? "var(--mantine-color-dark-6)"
-                      : "var(--mantine-color-gray-0)",
-                    border: `1px solid ${
-                      isDark
-                        ? "var(--mantine-color-dark-4)"
-                        : "var(--mantine-color-gray-3)"
-                    }`,
-                  }}
+                  bg={isDark ? "dark.6" : "gray.0"}
                 >
                   <Text
                     size="sm"
