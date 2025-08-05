@@ -31,7 +31,7 @@ const SettingsPlexView: FunctionComponent = () => {
       </Section>
       <CollapseBox settingKey={plexEnabledKey}>
         {/* New Beautiful Authentication Section */}
-        <Paper p="xl" radius="md" withBorder style={{ marginBottom: "20px" }}>
+        <Paper p="xl" radius="md" style={{ marginBottom: "20px" }}>
           <Stack gap="lg">
             <MantineText size="xl" fw={600}>
               How would you like to authenticate?

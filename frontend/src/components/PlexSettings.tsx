@@ -270,8 +270,8 @@ export const PlexSettings: React.FC = () => {
                   radius="md"
                   style={{
                     backgroundColor: isDark
-                      ? "var(--mantine-color-dark-7)"
-                      : "var(--mantine-color-gray-1)",
+                      ? "var(--mantine-color-dark-6)"
+                      : "var(--mantine-color-gray-0)",
                     border: `1px solid ${
                       isDark
                         ? "var(--mantine-color-dark-4)"
