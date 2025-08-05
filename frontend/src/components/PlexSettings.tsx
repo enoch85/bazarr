@@ -9,15 +9,11 @@ import {
   Stack,
   Text,
   Title,
-  useMantineColorScheme,
 } from "@mantine/core";
 import { usePlexOAuth } from "@/hooks/usePlexOAuth";
 import { usePlexServers } from "@/hooks/usePlexServers";
 
 export const PlexSettings: React.FC = () => {
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === "dark";
-
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -117,7 +113,7 @@ export const PlexSettings: React.FC = () => {
                   {pinData.code}
                 </Text>
               </Text>
-              <Text size="sm" c="dimmed">
+              <Text size="sm">
                 Complete the authentication in the opened window.
               </Text>
               <Button
@@ -140,7 +136,7 @@ export const PlexSettings: React.FC = () => {
           <Stack gap="md">
             <Title order={3}>Plex OAuth (Automated setup)</Title>
             <Stack gap="sm">
-              <Text size="sm" c="dimmed">
+              <Text size="sm">
                 Connect your Plex account to enable secure, automated
                 integration with Bazarr.
               </Text>
