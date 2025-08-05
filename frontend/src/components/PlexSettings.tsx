@@ -104,7 +104,7 @@ export const PlexSettings: React.FC = () => {
 
     if (isPolling && pinData) {
       return (
-        <Card withBorder radius="md" p="lg" bg={isDark ? "dark.6" : "gray.0"}>
+        <Card withBorder radius="md" p="lg">
           <Stack gap="md">
             <Title order={3}>Plex OAuth (Automated setup)</Title>
             <Stack gap="sm">
@@ -136,7 +136,7 @@ export const PlexSettings: React.FC = () => {
 
     if (!isAuthenticated) {
       return (
-        <Card withBorder radius="md" p="lg" bg={isDark ? "dark.6" : "gray.0"}>
+        <Card withBorder radius="md" p="lg">
           <Stack gap="md">
             <Title order={3}>Plex OAuth (Automated setup)</Title>
             <Stack gap="sm">
@@ -166,7 +166,7 @@ export const PlexSettings: React.FC = () => {
     }
 
     return (
-      <Card withBorder radius="md" p="lg" bg={isDark ? "dark.6" : "gray.0"}>
+      <Card withBorder radius="md" p="lg">
         <Stack gap="md">
           <Title order={3}>Plex OAuth (Automated setup)</Title>
           <Alert color="brand" variant="light">
@@ -196,13 +196,7 @@ export const PlexSettings: React.FC = () => {
     if (!isAuthenticated) return null;
 
     return (
-      <Card
-        withBorder
-        radius="md"
-        p="lg"
-        style={{ marginTop: "20px" }}
-        bg={isDark ? "dark.6" : "gray.0"}
-      >
+      <Card withBorder radius="md" p="lg" style={{ marginTop: "20px" }}>
         <Stack gap="lg">
           <Title order={3}>Plex Servers</Title>
 
@@ -265,19 +259,22 @@ export const PlexSettings: React.FC = () => {
                   <Group gap="xs">
                     <Text fw={500}>Server saved:</Text>
                     <Text>
-                      "{selectedServer.name}" (v{selectedServer.version})
+                      "{selectedServer.name}" (v
+                      {servers.find(
+                        (s) =>
+                          s.machineIdentifier ===
+                          selectedServer.machineIdentifier,
+                      )?.version ||
+                        selectedServer.version ||
+                        "Unknown"}
+                      )
                     </Text>
                   </Group>
                 </Alert>
               )}
 
               {localSelectedServerId && (
-                <Card
-                  withBorder
-                  p="md"
-                  radius="md"
-                  bg={isDark ? "dark.6" : "gray.0"}
-                >
+                <Card withBorder p="md" radius="md">
                   <Text
                     size="sm"
                     fw={600}
