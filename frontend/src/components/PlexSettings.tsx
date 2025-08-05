@@ -102,7 +102,7 @@ export const PlexSettings: React.FC = () => {
       return (
         <Card withBorder radius="md" p="lg">
           <Stack gap="md">
-            <Title order={3}>Plex OAuth (recommended)</Title>
+            <Title order={4}>Plex OAuth (recommended)</Title>
             <Stack gap="sm">
               <Text size="lg" fw={600}>
                 Complete Authentication
@@ -134,7 +134,7 @@ export const PlexSettings: React.FC = () => {
       return (
         <Card withBorder radius="md" p="lg">
           <Stack gap="md">
-            <Title order={3}>Plex OAuth (recommended)</Title>
+            <Title order={4}>Plex OAuth (recommended)</Title>
             <Stack gap="sm">
               <Text size="sm">
                 Connect your Plex account to enable secure, automated
@@ -164,7 +164,7 @@ export const PlexSettings: React.FC = () => {
     return (
       <Card withBorder radius="md" p="lg">
         <Stack gap="md">
-          <Title order={3}>Plex OAuth (recommended)</Title>
+          <Title order={4}>Plex OAuth (recommended)</Title>
           <Alert color="brand" variant="light">
             <Text fw={500}>
               Connected as{" "}
@@ -194,7 +194,7 @@ export const PlexSettings: React.FC = () => {
     return (
       <Card withBorder radius="md" p="lg" style={{ marginTop: "20px" }}>
         <Stack gap="lg">
-          <Title order={3}>Plex Servers</Title>
+          <Title order={4}>Plex Servers</Title>
 
           {serversError && (
             <Alert color="red" variant="light">
