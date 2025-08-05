@@ -26,17 +26,13 @@ const SettingsPlexView: FunctionComponent = () => {
 
   return (
     <Layout name="Interface">
-      <Section header="Use Plex operations">
+      <Section header="Use Plex Media Server">
         <Check label="Enabled" settingKey={plexEnabledKey}></Check>
       </Section>
       <CollapseBox settingKey={plexEnabledKey}>
         {/* New Beautiful Authentication Section */}
         <Paper p="xl" radius="md" style={{ marginBottom: "20px" }}>
           <Stack gap="lg">
-            <MantineText size="xl" fw={600}>
-              How would you like to authenticate?
-            </MantineText>
-
             {/* OAuth Section - Prominent */}
             <Box>
               <PlexSettings />
