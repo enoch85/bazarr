@@ -169,7 +169,7 @@ export const PlexSettings: React.FC = () => {
       <Card withBorder radius="md" p="lg">
         <Stack gap="md">
           <Title order={3}>Plex OAuth (Automated setup)</Title>
-          <Alert color="green" variant="light">
+          <Alert color="brand" variant="light">
             <Text fw={500}>
               Connected as{" "}
               <Text component="span" fw={700}>
@@ -253,12 +253,11 @@ export const PlexSettings: React.FC = () => {
               </Group>
 
               {serverSaved && selectedServer && (
-                <Alert color="green" variant="light">
+                <Alert color="brand" variant="light">
                   <Group gap="xs">
                     <Text fw={500}>Server saved:</Text>
                     <Text>
-                      "{selectedServer.name}" (
-                      {selectedServer.bestConnection?.uri})
+                      "{selectedServer.name}" (v{selectedServer.version})
                     </Text>
                   </Group>
                 </Alert>
@@ -269,9 +268,14 @@ export const PlexSettings: React.FC = () => {
                   withBorder
                   p="md"
                   radius="md"
-                  bg={isDark ? "dark.6" : "gray.0"}
+                  bg={isDark ? "dark.7" : "gray.1"}
                 >
-                  <Text size="sm" fw={600} mb="xs" c="dimmed">
+                  <Text
+                    size="sm"
+                    fw={600}
+                    mb="xs"
+                    c={isDark ? "gray.4" : "gray.6"}
+                  >
                     Available Connections:
                   </Text>
                   <Stack gap="xs">
@@ -284,11 +288,11 @@ export const PlexSettings: React.FC = () => {
                           <Group gap="xs" key={idx}>
                             <Text
                               size="sm"
-                              c={conn.available ? "green" : "red"}
+                              c={conn.available ? "brand" : "red"}
                             >
                               {conn.available ? "✓" : "✗"}
                             </Text>
-                            <Text size="sm">
+                            <Text size="sm" c={isDark ? "gray.3" : "gray.7"}>
                               {conn.uri}
                               {conn.local && " (Local)"}
                               {conn.latency && ` - ${conn.latency}ms`}

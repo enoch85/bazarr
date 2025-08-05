@@ -1,10 +1,8 @@
 import { FunctionComponent, useState } from "react";
 import {
   Alert,
-  Badge,
   Box,
   Button,
-  Card,
   Collapse,
   Group,
   Paper,
@@ -66,7 +64,7 @@ const SettingsPlexView: FunctionComponent = () => {
               <Collapse in={manualConfigOpen}>
                 <Paper p="lg" mt="sm" radius="md" withBorder>
                   <Stack gap="md">
-                    <Alert color="blue" variant="light">
+                    <Alert color="brand" variant="light">
                       This manual configuration is not needed when using Plex
                       OAuth above.
                     </Alert>
