@@ -268,7 +268,12 @@ export const PlexSettings: React.FC = () => {
                   withBorder
                   p="md"
                   radius="md"
-                  bg={isDark ? "dark.7" : "gray.1"}
+                  bg={isDark ? "dark.6" : "gray.1"}
+                  style={{
+                    borderColor: isDark
+                      ? "var(--mantine-color-dark-4)"
+                      : "var(--mantine-color-gray-3)",
+                  }}
                 >
                   <Text
                     size="sm"
