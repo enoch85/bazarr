@@ -40,32 +40,9 @@ const SettingsPlexView: FunctionComponent = () => {
             </MantineText>
 
             {/* OAuth Section - Prominent */}
-            <Card
-              padding="xl"
-              radius="md"
-              style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <Badge
-                color="yellow"
-                variant="filled"
-                size="lg"
-                style={{
-                  position: "absolute",
-                  top: 15,
-                  right: 15,
-                  fontWeight: 700,
-                }}
-              >
-                recommended
-              </Badge>
-
+            <Box>
               <PlexSettings />
-            </Card>
+            </Box>
 
             {/* Manual Configuration - Collapsible */}
             <Box>

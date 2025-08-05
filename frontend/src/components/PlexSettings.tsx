@@ -8,11 +8,16 @@ import {
   Select,
   Stack,
   Text,
+  Title,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { usePlexOAuth } from "@/hooks/usePlexOAuth";
 import { usePlexServers } from "@/hooks/usePlexServers";
 
 export const PlexSettings: React.FC = () => {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
+
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -99,101 +104,91 @@ export const PlexSettings: React.FC = () => {
 
     if (isPolling && pinData) {
       return (
-        <Stack gap="md">
-          <Group gap="sm">
-            <Text size="xl">🎬</Text>
-            <Text size="xl" fw={700}>
-              Plex OAuth (Automated setup)
-            </Text>
-          </Group>
-          <Stack gap="sm">
-            <Text size="lg" fw={600}>
-              Complete Authentication
-            </Text>
-            <Text>
-              PIN Code:{" "}
-              <Text component="span" fw={700}>
-                {pinData.code}
+        <Card withBorder radius="md" p="lg">
+          <Stack gap="md">
+            <Title order={3}>Plex OAuth (Automated setup)</Title>
+            <Stack gap="sm">
+              <Text size="lg" fw={600}>
+                Complete Authentication
               </Text>
-            </Text>
-            <Text size="sm" style={{ opacity: 0.9 }}>
-              Complete the authentication in the opened window.
-            </Text>
-            <Button onClick={cancelAuth} variant="white" color="dark" size="sm">
-              Cancel
-            </Button>
+              <Text>
+                PIN Code:{" "}
+                <Text component="span" fw={700}>
+                  {pinData.code}
+                </Text>
+              </Text>
+              <Text size="sm" c="dimmed">
+                Complete the authentication in the opened window.
+              </Text>
+              <Button
+                onClick={cancelAuth}
+                variant="light"
+                color="gray"
+                size="sm"
+              >
+                Cancel
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
+        </Card>
       );
     }
 
     if (!isAuthenticated) {
       return (
-        <Stack gap="md">
-          <Group gap="sm">
-            <Text size="xl">🎬</Text>
-            <Text size="xl" fw={700}>
-              Plex OAuth (Automated setup)
-            </Text>
-          </Group>
-          <Stack gap="sm">
-            <Text size="sm" style={{ opacity: 0.9 }}>
-              Connect your Plex account to enable secure, automated integration
-              with Bazarr.
-            </Text>
-            {authError && (
-              <Alert color="red" variant="light">
-                {authError}
-                {errorCode && <Text size="xs"> (Code: {errorCode})</Text>}
-              </Alert>
-            )}
-            <Button
-              onClick={() => startAuth()}
-              variant="white"
-              color="dark"
-              size="md"
-              leftSection={<Text>🎬</Text>}
-              style={{ alignSelf: "flex-start" }}
-            >
-              Connect to Plex
-            </Button>
+        <Card withBorder radius="md" p="lg">
+          <Stack gap="md">
+            <Title order={3}>Plex OAuth (Automated setup)</Title>
+            <Stack gap="sm">
+              <Text size="sm" c="dimmed">
+                Connect your Plex account to enable secure, automated
+                integration with Bazarr.
+              </Text>
+              {authError && (
+                <Alert color="red" variant="light">
+                  {authError}
+                  {errorCode && <Text size="xs"> (Code: {errorCode})</Text>}
+                </Alert>
+              )}
+              <Button
+                onClick={() => startAuth()}
+                variant="filled"
+                color="brand"
+                size="md"
+                style={{ alignSelf: "flex-start" }}
+              >
+                Connect to Plex
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
+        </Card>
       );
     }
 
     return (
-      <Stack gap="md">
-        <Group gap="sm">
-          <Text size="xl">🎬</Text>
-          <Text size="xl" fw={700}>
-            Plex OAuth (Automated setup)
-          </Text>
-        </Group>
-        <Alert
-          icon={<Text>✓</Text>}
-          color="teal"
-          variant="light"
-          style={{ backgroundColor: "rgba(255,255,255,0.9)", color: "#2f9e44" }}
-        >
-          <Text fw={500}>
-            Connected as{" "}
-            <Text component="span" fw={700}>
-              {username}
-            </Text>{" "}
-            ({email})
-          </Text>
-        </Alert>
-        <Button
-          onClick={logout}
-          variant="white"
-          color="dark"
-          size="sm"
-          style={{ alignSelf: "flex-start" }}
-        >
-          Disconnect from Plex
-        </Button>
-      </Stack>
+      <Card withBorder radius="md" p="lg">
+        <Stack gap="md">
+          <Title order={3}>Plex OAuth (Automated setup)</Title>
+          <Alert color="teal" variant="light">
+            <Text fw={500}>
+              Connected as{" "}
+              <Text component="span" fw={700}>
+                {username}
+              </Text>{" "}
+              ({email})
+            </Text>
+          </Alert>
+          <Button
+            onClick={logout}
+            variant="light"
+            color="gray"
+            size="sm"
+            style={{ alignSelf: "flex-start" }}
+          >
+            Disconnect from Plex
+          </Button>
+        </Stack>
+      </Card>
     );
   };
 
@@ -201,14 +196,9 @@ export const PlexSettings: React.FC = () => {
     if (!isAuthenticated) return null;
 
     return (
-      <Card p="xl" radius="md" withBorder style={{ marginTop: "20px" }}>
+      <Card withBorder radius="md" p="lg" style={{ marginTop: "20px" }}>
         <Stack gap="lg">
-          <Group gap="sm">
-            <Text size="xl">🖥️</Text>
-            <Text size="xl" fw={600} c="dark.8">
-              Plex Servers
-            </Text>
-          </Group>
+          <Title order={3}>Plex Servers</Title>
 
           {serversError && (
             <Alert color="red" variant="light">
@@ -245,10 +235,9 @@ export const PlexSettings: React.FC = () => {
                 />
                 <Button
                   variant="filled"
-                  color="blue"
+                  color="brand"
                   disabled={!localSelectedServerId || isSelectingServer}
                   loading={isSelectingServer}
-                  leftSection={<Text>✓</Text>}
                   onClick={handleServerSelect}
                 >
                   Select Server
@@ -259,17 +248,12 @@ export const PlexSettings: React.FC = () => {
                   size="lg"
                   onClick={fetchServers}
                 >
-                  <Text>🔄</Text>
+                  ↻
                 </ActionIcon>
               </Group>
 
               {serverSaved && selectedServer && (
-                <Alert
-                  icon={<Text>✓</Text>}
-                  color="green"
-                  variant="light"
-                  style={{ backgroundColor: "#f3f9f3" }}
-                >
+                <Alert color="green" variant="light">
                   <Group gap="xs">
                     <Text fw={500}>Server saved:</Text>
                     <Text>
@@ -281,8 +265,13 @@ export const PlexSettings: React.FC = () => {
               )}
 
               {localSelectedServerId && (
-                <Card p="md" radius="md" style={{ backgroundColor: "#f8f9fa" }}>
-                  <Text size="sm" fw={600} mb="xs" c="dark.7">
+                <Card
+                  withBorder
+                  p="md"
+                  radius="md"
+                  bg={isDark ? "dark.6" : "gray.0"}
+                >
+                  <Text size="sm" fw={600} mb="xs" c="dimmed">
                     Available Connections:
                   </Text>
                   <Stack gap="xs">
@@ -295,14 +284,13 @@ export const PlexSettings: React.FC = () => {
                           <Group gap="xs" key={idx}>
                             <Text
                               size="sm"
-                              color={conn.available ? "#51cf66" : "#fa5252"}
+                              c={conn.available ? "green" : "red"}
                             >
                               {conn.available ? "✓" : "✗"}
                             </Text>
                             <Text size="sm">
                               {conn.uri}
                               {conn.local && " (Local)"}
-                              {conn.available ? " ✓" : " ✗"}
                               {conn.latency && ` - ${conn.latency}ms`}
                             </Text>
                           </Group>
@@ -319,10 +307,10 @@ export const PlexSettings: React.FC = () => {
   };
 
   return (
-    <div>
+    <Stack gap="lg">
       {renderAuthSection()}
       {renderServerSection()}
-    </div>
+    </Stack>
   );
 };
 
