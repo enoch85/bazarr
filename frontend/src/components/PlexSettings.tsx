@@ -265,14 +265,18 @@ export const PlexSettings: React.FC = () => {
 
               {localSelectedServerId && (
                 <Card
-                  withBorder
+                  withBorder={false}
                   p="md"
                   radius="md"
-                  bg={isDark ? "dark.6" : "gray.1"}
                   style={{
-                    borderColor: isDark
-                      ? "var(--mantine-color-dark-4)"
-                      : "var(--mantine-color-gray-3)",
+                    backgroundColor: isDark
+                      ? "var(--mantine-color-dark-7)"
+                      : "var(--mantine-color-gray-1)",
+                    border: `1px solid ${
+                      isDark
+                        ? "var(--mantine-color-dark-4)"
+                        : "var(--mantine-color-gray-3)"
+                    }`,
                   }}
                 >
                   <Text
