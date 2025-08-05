@@ -14,7 +14,7 @@ from . import api_ns_plex
 from .exceptions import *
 from .security import TokenManager
 from .cache import cache_pin, get_cached_pin, delete_cached_pin
-from bazarr.app.config import settings
+from app.config import settings
 
 from flask_restx import errors as restx_errors
 
@@ -134,7 +134,7 @@ def test_plex_connection(uri, token):
         return False
 
 # Flask-RESTX Resources
-@api_ns_plex.route('/oauth/pin')
+@api_ns_plex.route('plex/oauth/pin')
 class PlexPin(Resource):
     def post(self):
         """Create Plex OAuth PIN."""
@@ -185,7 +185,7 @@ class PlexPin(Resource):
         from flask_restx import abort
         abort(405, "Method not allowed. Use POST.")
 
-@api_ns_plex.route('/oauth/pin/<string:pin_id>/check')
+@api_ns_plex.route('plex/oauth/pin/<string:pin_id>/check')
 class PlexPinCheck(Resource):
     def get(self, pin_id):
         """Check PIN status."""
@@ -247,7 +247,7 @@ class PlexPinCheck(Resource):
         except requests.exceptions.RequestException as e:
             raise PlexConnectionError(f"Failed to check PIN: {str(e)}")
 
-@api_ns_plex.route('/oauth/validate')
+@api_ns_plex.route('plex/oauth/validate')
 class PlexValidate(Resource):
     def get(self):
         """Validate current Plex token."""
@@ -280,7 +280,7 @@ class PlexValidate(Resource):
                 'code': e.error_code
             }, 200  # Return 200 to distinguish from other errors
 
-@api_ns_plex.route('/oauth/servers')
+@api_ns_plex.route('plex/oauth/servers')
 class PlexServers(Resource):
     def get(self):
         """Get Plex servers."""
@@ -340,7 +340,7 @@ class PlexServers(Resource):
         except requests.exceptions.RequestException as e:
             raise PlexConnectionError(f"Failed to get servers: {str(e)}")
 
-@api_ns_plex.route('/oauth/logout')
+@api_ns_plex.route('plex/oauth/logout')
 class PlexLogout(Resource):
     def post(self):
         """Clear Plex authentication."""
@@ -359,7 +359,7 @@ class PlexLogout(Resource):
             return {'error': 'Failed to logout'}, 500
 
 # Additional endpoints referenced in frontend
-@api_ns_plex.route('/test-connection')
+@api_ns_plex.route('plex/test-connection')
 class PlexTestConnection(Resource):
     def post(self):
         """Test connection to a specific Plex server URI."""
@@ -406,7 +406,7 @@ class PlexTestConnection(Resource):
         from flask_restx import abort
         abort(405, "Method not allowed. Use POST.")
 
-@api_ns_plex.route('/select-server')
+@api_ns_plex.route('plex/select-server')
 class PlexSelectServer(Resource):
     def post(self):
         """Select a specific Plex server to use."""

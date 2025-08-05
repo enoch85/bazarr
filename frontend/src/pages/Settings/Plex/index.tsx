@@ -9,6 +9,7 @@ import {
   Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
+import PlexSettings from "@/components/PlexSettings";
 
 const SettingsPlexView: FunctionComponent = () => {
   return (
@@ -17,14 +18,18 @@ const SettingsPlexView: FunctionComponent = () => {
         <Check label="Enabled" settingKey={plexEnabledKey}></Check>
       </Section>
       <CollapseBox settingKey={plexEnabledKey}>
-        <Section header="Host">
+        <Section header="Authentication">
+          <PlexSettings />
+          <Message>Connect to Plex using OAuth for secure authentication</Message>
+        </Section>
+        <Section header="Host (Manual Configuration)">
           <Text label="Address" settingKey="settings-plex-ip"></Text>
           <Number
             label="Port"
             settingKey="settings-plex-port"
             defaultValue={32400}
           ></Number>
-          <Message>Hostname or IPv4 Address</Message>
+          <Message>Hostname or IPv4 Address (only needed if not using OAuth)</Message>
           <Text label="API Token" settingKey="settings-plex-apikey"></Text>
           <Check label="SSL" settingKey="settings-plex-ssl"></Check>
         </Section>
