@@ -1,6 +1,5 @@
 import { FunctionComponent } from "react";
 
-import PlexSettings from "@/components/PlexSettings";
 import {
   Check,
   CollapseBox,
@@ -11,6 +10,7 @@ import {
   Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
+import PlexSettings from "@/components/PlexSettings";
 
 const SettingsPlexView: FunctionComponent = () => {
   return (

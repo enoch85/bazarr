@@ -14,7 +14,7 @@ from . import api_ns_plex
 from .exceptions import *
 from .security import TokenManager
 from .cache import cache_pin, get_cached_pin, delete_cached_pin
-from app.config import settings
+from app.config import settings, write_config
 
 from flask_restx import errors as restx_errors
 
@@ -44,7 +44,7 @@ def get_token_manager():
     if not key:
         key = Fernet.generate_key().decode()
         settings.plex.encryption_key = key
-        settings.save()
+        write_config()
     return TokenManager(key)
 
 token_manager = get_token_manager()
@@ -216,6 +216,13 @@ class PlexPinCheck(Resource):
                 headers=headers,
                 timeout=10
             )
+            
+            # Handle specific status codes
+            if response.status_code == 404:
+                # PIN was consumed or expired
+                delete_cached_pin(pin_id)
+                raise PlexPinExpiredError()
+            
             response.raise_for_status()
             
             pin_data = response.json()
@@ -227,12 +234,22 @@ class PlexPinCheck(Resource):
                 # Store encrypted token (Bazarr uses global settings, not per-user)
                 encrypted_token = encrypt_token(pin_data['authToken'])
                 
+                # Ensure user_id is always a string, handle None case
+                user_id = user_data.get('id')
+                user_id_str = str(user_id) if user_id is not None else ''
+                
                 settings.plex.token = encrypted_token
-                settings.plex.username = user_data.get('username')
-                settings.plex.email = user_data.get('email')
-                settings.plex.user_id = str(user_data.get('id'))
+                settings.plex.username = user_data.get('username') or ''
+                settings.plex.email = user_data.get('email') or ''
+                settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
-                settings.save()
+                
+                try:
+                    write_config()
+                except Exception as config_error:
+                    # Log the error but don't fail the authentication
+                    current_app.logger.error(f"Failed to save OAuth settings: {config_error}")
+                    # Settings are still in memory, so OAuth will work until restart
                 
                 # Clean up PIN
                 delete_cached_pin(pin_id)
@@ -302,18 +319,58 @@ class PlexServers(Resource):
                 'Accept': 'application/json'
             }
             
-            # Get servers from plex.tv
+            # Get servers from plex.tv - use the correct API endpoint
             response = requests.get(
-                'https://plex.tv/api/v2/resources',
+                'https://plex.tv/pms/resources',
                 headers=headers,
-                params={'includeHttps': 1, 'includeRelay': 1},
+                params={'includeHttps': '1', 'includeRelay': '1'},
                 timeout=10
             )
+            
+            # Add better error handling
+            if response.status_code != 200:
+                current_app.logger.error(f"Plex API error: {response.status_code} - {response.text}")
+                raise PlexConnectionError(f"Failed to get servers: HTTP {response.status_code}")
+            
             response.raise_for_status()
             
+            # Check content type and parse accordingly
+            content_type = response.headers.get('content-type', '')
+            if 'application/json' in content_type:
+                resources_data = response.json()
+            elif 'application/xml' in content_type or 'text/xml' in content_type:
+                # Parse XML response
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(response.text)
+                resources_data = []
+                for device in root.findall('Device'):
+                    connections = []
+                    for conn in device.findall('Connection'):
+                        connections.append({
+                            'uri': conn.get('uri'),
+                            'protocol': conn.get('protocol'),
+                            'address': conn.get('address'),
+                            'port': int(conn.get('port', 0)),
+                            'local': conn.get('local') == '1'
+                        })
+                    
+                    if device.get('provides') == 'server' and device.get('owned') == '1':
+                        resources_data.append({
+                            'name': device.get('name'),
+                            'clientIdentifier': device.get('clientIdentifier'),
+                            'provides': device.get('provides'),
+                            'owned': device.get('owned') == '1',
+                            'connections': connections,
+                            'productVersion': device.get('productVersion'),
+                            'platform': device.get('platform'),
+                            'device': device.get('device')
+                        })
+            else:
+                raise PlexConnectionError(f"Unexpected response format: {content_type}")
+            
             servers = []
-            for device in response.json():
-                if device.get('provides') == 'server' and device.get('owned'):
+            for device in resources_data:
+                if isinstance(device, dict) and device.get('provides') == 'server' and device.get('owned'):
                     # Test each connection
                     connections = []
                     for conn in device.get('connections', []):
@@ -356,7 +413,7 @@ class PlexLogout(Resource):
             settings.plex.email = None
             settings.plex.user_id = None
             settings.plex.auth_method = 'apikey'  # Reset to default
-            settings.save()
+            write_config()
             
 
             return {'success': True}
@@ -428,7 +485,7 @@ class PlexSelectServer(Resource):
         settings.plex.server_name = name
         settings.plex.server_url = connection.get('uri')
         settings.plex.server_local = connection.get('local', False)
-        settings.save()
+        write_config()
         
         return {
             'success': True,
