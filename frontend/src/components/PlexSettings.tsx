@@ -1,23 +1,16 @@
-import { useEffect, useState } from "react";
-import React from "react";
-import { usePlexOAuth } from "@/hooks/usePlexOAuth";
-import { usePlexServers } from "@/hooks/usePlexServers";
+import React, { useEffect, useState } from "react";
 import {
-  Stack,
-  Text,
+  ActionIcon,
+  Alert,
   Button,
+  Card,
   Group,
   Select,
-  Alert,
-  Card,
-  ActionIcon,
+  Stack,
+  Text,
 } from "@mantine/core";
-import {
-  IconCheck,
-  IconBrandPlex,
-  IconServer,
-  IconRefresh,
-} from "@tabler/icons-react";
+import { usePlexOAuth } from "@/hooks/usePlexOAuth";
+import { usePlexServers } from "@/hooks/usePlexServers";
 
 export const PlexSettings: React.FC = () => {
   const {
@@ -52,7 +45,8 @@ export const PlexSettings: React.FC = () => {
     setSelectedServer,
   } = usePlexServers();
 
-  const [localSelectedServerId, setLocalSelectedServerId] = useState<string>("");
+  const [localSelectedServerId, setLocalSelectedServerId] =
+    useState<string>("");
   const [isSelectingServer, setIsSelectingServer] = useState(false);
   const [serverSaved, setServerSaved] = useState(false);
 
@@ -83,14 +77,16 @@ export const PlexSettings: React.FC = () => {
 
     setIsSelectingServer(true);
     try {
-      const server = servers.find((s: any) => s.machineIdentifier === localSelectedServerId);
+      const server = servers.find(
+        (s) => s.machineIdentifier === localSelectedServerId,
+      );
       if (server && server.bestConnection) {
         await selectServer(localSelectedServerId);
         setSelectedServer(server);
         setServerSaved(true);
       }
     } catch (error) {
-      console.error('Failed to select server:', error);
+      // Failed to select server - error handled in UI
     } finally {
       setIsSelectingServer(false);
     }
@@ -105,15 +101,20 @@ export const PlexSettings: React.FC = () => {
       return (
         <Stack gap="md">
           <Group gap="sm">
-            <IconBrandPlex size={28} />
+            <Text size="xl">🎬</Text>
             <Text size="xl" fw={700}>
               Plex OAuth (Automated setup)
             </Text>
           </Group>
           <Stack gap="sm">
-            <Text size="lg" fw={600}>Complete Authentication</Text>
+            <Text size="lg" fw={600}>
+              Complete Authentication
+            </Text>
             <Text>
-              PIN Code: <Text component="span" fw={700}>{pinData.code}</Text>
+              PIN Code:{" "}
+              <Text component="span" fw={700}>
+                {pinData.code}
+              </Text>
             </Text>
             <Text size="sm" style={{ opacity: 0.9 }}>
               Complete the authentication in the opened window.
@@ -130,14 +131,15 @@ export const PlexSettings: React.FC = () => {
       return (
         <Stack gap="md">
           <Group gap="sm">
-            <IconBrandPlex size={28} />
+            <Text size="xl">🎬</Text>
             <Text size="xl" fw={700}>
               Plex OAuth (Automated setup)
             </Text>
           </Group>
           <Stack gap="sm">
             <Text size="sm" style={{ opacity: 0.9 }}>
-              Connect your Plex account to enable secure, automated integration with Bazarr.
+              Connect your Plex account to enable secure, automated integration
+              with Bazarr.
             </Text>
             {authError && (
               <Alert color="red" variant="light">
@@ -150,7 +152,7 @@ export const PlexSettings: React.FC = () => {
               variant="white"
               color="dark"
               size="md"
-              leftSection={<IconBrandPlex size={18} />}
+              leftSection={<Text>🎬</Text>}
               style={{ alignSelf: "flex-start" }}
             >
               Connect to Plex
@@ -163,19 +165,23 @@ export const PlexSettings: React.FC = () => {
     return (
       <Stack gap="md">
         <Group gap="sm">
-          <IconBrandPlex size={28} />
+          <Text size="xl">🎬</Text>
           <Text size="xl" fw={700}>
             Plex OAuth (Automated setup)
           </Text>
         </Group>
         <Alert
-          icon={<IconCheck size={16} />}
+          icon={<Text>✓</Text>}
           color="teal"
           variant="light"
           style={{ backgroundColor: "rgba(255,255,255,0.9)", color: "#2f9e44" }}
         >
           <Text fw={500}>
-            Connected as <Text component="span" fw={700}>{username}</Text> ({email})
+            Connected as{" "}
+            <Text component="span" fw={700}>
+              {username}
+            </Text>{" "}
+            ({email})
           </Text>
         </Alert>
         <Button
@@ -198,7 +204,7 @@ export const PlexSettings: React.FC = () => {
       <Card p="xl" radius="md" withBorder style={{ marginTop: "20px" }}>
         <Stack gap="lg">
           <Group gap="sm">
-            <IconServer size={24} color="#667eea" />
+            <Text size="xl">🖥️</Text>
             <Text size="xl" fw={600} c="dark.8">
               Plex Servers
             </Text>
@@ -225,13 +231,15 @@ export const PlexSettings: React.FC = () => {
                 <Select
                   label="Select your Plex server"
                   placeholder="Choose a server..."
-                  data={servers.map((server: any) => ({
+                  data={servers.map((server) => ({
                     value: server.machineIdentifier,
-                    label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? ' (Unavailable)' : ''}`,
-                    disabled: !server.bestConnection
+                    label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? " (Unavailable)" : ""}`,
+                    disabled: !server.bestConnection,
                   }))}
                   value={localSelectedServerId}
-                  onChange={(value: any) => setLocalSelectedServerId(value || "")}
+                  onChange={(value: string | null) =>
+                    setLocalSelectedServerId(value || "")
+                  }
                   style={{ flex: 1 }}
                   searchable
                 />
@@ -240,7 +248,7 @@ export const PlexSettings: React.FC = () => {
                   color="blue"
                   disabled={!localSelectedServerId || isSelectingServer}
                   loading={isSelectingServer}
-                  leftSection={<IconCheck size={16} />}
+                  leftSection={<Text>✓</Text>}
                   onClick={handleServerSelect}
                 >
                   Select Server
@@ -251,20 +259,23 @@ export const PlexSettings: React.FC = () => {
                   size="lg"
                   onClick={fetchServers}
                 >
-                  <IconRefresh size={18} />
+                  <Text>🔄</Text>
                 </ActionIcon>
               </Group>
 
               {serverSaved && selectedServer && (
                 <Alert
-                  icon={<IconCheck size={16} />}
+                  icon={<Text>✓</Text>}
                   color="green"
                   variant="light"
                   style={{ backgroundColor: "#f3f9f3" }}
                 >
                   <Group gap="xs">
                     <Text fw={500}>Server saved:</Text>
-                    <Text>"{selectedServer.name}" ({selectedServer.bestConnection?.uri})</Text>
+                    <Text>
+                      "{selectedServer.name}" (
+                      {selectedServer.bestConnection?.uri})
+                    </Text>
                   </Group>
                 </Alert>
               )}
@@ -276,11 +287,18 @@ export const PlexSettings: React.FC = () => {
                   </Text>
                   <Stack gap="xs">
                     {servers
-                      .filter((s: any) => s.machineIdentifier === localSelectedServerId)
-                      .map((server: any) => 
-                        server.connections.map((conn: any, idx: number) => (
+                      .filter(
+                        (s) => s.machineIdentifier === localSelectedServerId,
+                      )
+                      .map((server) =>
+                        server.connections.map((conn, idx: number) => (
                           <Group gap="xs" key={idx}>
-                            <IconCheck size={14} color={conn.available ? "#51cf66" : "#fa5252"} />
+                            <Text
+                              size="sm"
+                              color={conn.available ? "#51cf66" : "#fa5252"}
+                            >
+                              {conn.available ? "✓" : "✗"}
+                            </Text>
                             <Text size="sm">
                               {conn.uri}
                               {conn.local && " (Local)"}
@@ -288,7 +306,7 @@ export const PlexSettings: React.FC = () => {
                               {conn.latency && ` - ${conn.latency}ms`}
                             </Text>
                           </Group>
-                        ))
+                        )),
                       )}
                   </Stack>
                 </Card>

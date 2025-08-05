@@ -1,5 +1,17 @@
 import { FunctionComponent, useState } from "react";
-
+import {
+  Alert,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Collapse,
+  Group,
+  Paper,
+  Stack,
+  Text as MantineText,
+} from "@mantine/core";
+import PlexSettings from "@/components/PlexSettings";
 import {
   Check,
   CollapseBox,
@@ -10,25 +22,6 @@ import {
   Text,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
-import PlexSettings from "@/components/PlexSettings";
-import {
-  Stack,
-  Paper,
-  Text as MantineText,
-  Button,
-  Group,
-  Alert,
-  Collapse,
-  Badge,
-  Box,
-  Card,
-} from "@mantine/core";
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconAlertCircle,
-  IconSettings,
-} from "@tabler/icons-react";
 
 const SettingsPlexView: FunctionComponent = () => {
   const [manualConfigOpen, setManualConfigOpen] = useState(false);
@@ -80,8 +73,12 @@ const SettingsPlexView: FunctionComponent = () => {
                 variant="subtle"
                 color="gray"
                 size="md"
-                leftSection={manualConfigOpen ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                rightSection={<IconSettings size={16} />}
+                leftSection={
+                  <MantineText size="sm">
+                    {manualConfigOpen ? "▲" : "▼"}
+                  </MantineText>
+                }
+                rightSection={<MantineText size="sm">⚙️</MantineText>}
                 onClick={() => setManualConfigOpen(!manualConfigOpen)}
                 style={{
                   fontWeight: 500,
@@ -92,18 +89,30 @@ const SettingsPlexView: FunctionComponent = () => {
               </Button>
 
               <Collapse in={manualConfigOpen}>
-                <Paper p="lg" mt="sm" radius="md" style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}>
+                <Paper
+                  p="lg"
+                  mt="sm"
+                  radius="md"
+                  style={{
+                    backgroundColor: "#f8f9fa",
+                    border: "1px solid #e9ecef",
+                  }}
+                >
                   <Stack gap="md">
                     <Alert
-                      icon={<IconAlertCircle size={16} />}
+                      icon={<MantineText size="sm">ℹ️</MantineText>}
                       color="blue"
                       variant="light"
                     >
-                      This manual configuration is not needed when using Plex OAuth above.
+                      This manual configuration is not needed when using Plex
+                      OAuth above.
                     </Alert>
 
                     <Group grow>
-                      <Text label="Address" settingKey="settings-plex-ip"></Text>
+                      <Text
+                        label="Address"
+                        settingKey="settings-plex-ip"
+                      ></Text>
                       <Number
                         label="Port"
                         settingKey="settings-plex-port"
@@ -111,7 +120,10 @@ const SettingsPlexView: FunctionComponent = () => {
                       ></Number>
                     </Group>
 
-                    <Text label="API Token" settingKey="settings-plex-apikey"></Text>
+                    <Text
+                      label="API Token"
+                      settingKey="settings-plex-apikey"
+                    ></Text>
                     <Check label="SSL" settingKey="settings-plex-ssl"></Check>
                   </Stack>
                 </Paper>
