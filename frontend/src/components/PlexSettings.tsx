@@ -275,12 +275,7 @@ export const PlexSettings: React.FC = () => {
 
               {localSelectedServerId && (
                 <Card withBorder p="md" radius="md">
-                  <Text
-                    size="sm"
-                    fw={600}
-                    mb="xs"
-                    c={isDark ? "gray.4" : "gray.6"}
-                  >
+                  <Text size="sm" fw={600} mb="xs">
                     Available Connections:
                   </Text>
                   <Stack gap="xs">
@@ -297,7 +292,7 @@ export const PlexSettings: React.FC = () => {
                             >
                               {conn.available ? "✓" : "✗"}
                             </Text>
-                            <Text size="sm" c={isDark ? "gray.3" : "gray.7"}>
+                            <Text size="sm">
                               {conn.uri}
                               {conn.local && " (Local)"}
                               {conn.latency && ` - ${conn.latency}ms`}
