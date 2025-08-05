@@ -169,7 +169,7 @@ export const PlexSettings: React.FC = () => {
       <Card withBorder radius="md" p="lg">
         <Stack gap="md">
           <Title order={3}>Plex OAuth (Automated setup)</Title>
-          <Alert color="teal" variant="light">
+          <Alert color="green" variant="light">
             <Text fw={500}>
               Connected as{" "}
               <Text component="span" fw={700}>

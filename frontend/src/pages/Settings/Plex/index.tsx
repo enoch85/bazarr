@@ -35,7 +35,7 @@ const SettingsPlexView: FunctionComponent = () => {
         {/* New Beautiful Authentication Section */}
         <Paper p="xl" radius="md" withBorder style={{ marginBottom: "20px" }}>
           <Stack gap="lg">
-            <MantineText size="xl" fw={600} c="dark.8">
+            <MantineText size="xl" fw={600}>
               How would you like to authenticate?
             </MantineText>
 
@@ -55,32 +55,18 @@ const SettingsPlexView: FunctionComponent = () => {
                     {manualConfigOpen ? "▲" : "▼"}
                   </MantineText>
                 }
-                rightSection={<MantineText size="sm">⚙️</MantineText>}
                 onClick={() => setManualConfigOpen(!manualConfigOpen)}
                 style={{
                   fontWeight: 500,
-                  color: "#868e96",
                 }}
               >
                 Manual Configuration (click to expand)
               </Button>
 
               <Collapse in={manualConfigOpen}>
-                <Paper
-                  p="lg"
-                  mt="sm"
-                  radius="md"
-                  style={{
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #e9ecef",
-                  }}
-                >
+                <Paper p="lg" mt="sm" radius="md" withBorder>
                   <Stack gap="md">
-                    <Alert
-                      icon={<MantineText size="sm">ℹ️</MantineText>}
-                      color="blue"
-                      variant="light"
-                    >
+                    <Alert color="blue" variant="light">
                       This manual configuration is not needed when using Plex
                       OAuth above.
                     </Alert>
