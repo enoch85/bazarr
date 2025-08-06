@@ -19,7 +19,7 @@ import { useFormValues } from "@/pages/Settings/utilities/FormValues";
 
 export const PlexSettings: React.FC = () => {
   const queryClient = useQueryClient();
-  
+
   // Access form context to reset staged changes after OAuth
   let form: ReturnType<typeof useFormValues> | null = null;
   try {
@@ -28,7 +28,7 @@ export const PlexSettings: React.FC = () => {
     // Form context not available (PlexSettings used outside settings page)
     form = null;
   }
-  
+
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -48,7 +48,7 @@ export const PlexSettings: React.FC = () => {
       queryClient.invalidateQueries({
         queryKey: [QueryKeys.System],
       });
-      
+
       // Reset form to clear any staged changes since OAuth changes are already saved
       if (form) {
         setTimeout(() => {
@@ -105,7 +105,7 @@ export const PlexSettings: React.FC = () => {
     setIsSelectingServer(true);
     try {
       const server = servers.find(
-        (s) => s.machineIdentifier === localSelectedServerId,
+        (s: any) => s.machineIdentifier === localSelectedServerId,
       );
       if (server && server.bestConnection) {
         await selectServer(localSelectedServerId);
@@ -125,7 +125,7 @@ export const PlexSettings: React.FC = () => {
     queryClient.invalidateQueries({
       queryKey: [QueryKeys.System],
     });
-    
+
     // Reset form to clear any staged changes since logout changes are already saved
     if (form) {
       setTimeout(() => {
@@ -254,7 +254,7 @@ export const PlexSettings: React.FC = () => {
                 <Select
                   label="Select your Plex server"
                   placeholder="Choose a server..."
-                  data={servers.map((server) => ({
+                  data={servers.map((server: any) => ({
                     value: server.machineIdentifier,
                     label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? " (Unavailable)" : ""}`,
                     disabled: !server.bestConnection,
@@ -289,7 +289,7 @@ export const PlexSettings: React.FC = () => {
                 <Alert color="brand" variant="light">
                   Server saved: "{selectedServer.name}" (v
                   {servers.find(
-                    (s) =>
+                    (s: any) =>
                       s.machineIdentifier === selectedServer.machineIdentifier,
                   )?.version ||
                     selectedServer.version ||
@@ -306,10 +306,11 @@ export const PlexSettings: React.FC = () => {
                   <Stack gap="xs">
                     {servers
                       .filter(
-                        (s) => s.machineIdentifier === localSelectedServerId,
+                        (s: any) =>
+                          s.machineIdentifier === localSelectedServerId,
                       )
-                      .map((server) =>
-                        server.connections.map((conn, idx: number) => (
+                      .map((server: any) =>
+                        server.connections.map((conn: any, idx: number) => (
                           <Group gap="xs" key={idx}>
                             <Text
                               size="sm"
