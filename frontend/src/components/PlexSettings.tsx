@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   ActionIcon,
   Alert,
@@ -14,21 +14,15 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import { usePlexOAuth } from "@/hooks/usePlexOAuth";
+import type { PlexServer, PlexServerConnection } from "@/hooks/usePlexServers";
 import { usePlexServers } from "@/hooks/usePlexServers";
-import { useFormValues } from "@/pages/Settings/utilities/FormValues";
+import { FormContext } from "@/pages/Settings/utilities/FormValues";
 
 export const PlexSettings: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // Access form context to reset staged changes after OAuth
-  let form: ReturnType<typeof useFormValues> | null = null;
-  try {
-    form = useFormValues();
-  } catch {
-    // Form context not available (PlexSettings used outside settings page)
-    form = null;
-  }
-
+  // Access form context safely using useContext
+  const form = useContext(FormContext);
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -105,7 +99,7 @@ export const PlexSettings: React.FC = () => {
     setIsSelectingServer(true);
     try {
       const server = servers.find(
-        (s: any) => s.machineIdentifier === localSelectedServerId,
+        (s: PlexServer) => s.machineIdentifier === localSelectedServerId,
       );
       if (server && server.bestConnection) {
         await selectServer(localSelectedServerId);
@@ -254,7 +248,7 @@ export const PlexSettings: React.FC = () => {
                 <Select
                   label="Select your Plex server"
                   placeholder="Choose a server..."
-                  data={servers.map((server: any) => ({
+                  data={servers.map((server: PlexServer) => ({
                     value: server.machineIdentifier,
                     label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? " (Unavailable)" : ""}`,
                     disabled: !server.bestConnection,
@@ -289,7 +283,7 @@ export const PlexSettings: React.FC = () => {
                 <Alert color="brand" variant="light">
                   Server saved: "{selectedServer.name}" (v
                   {servers.find(
-                    (s: any) =>
+                    (s: PlexServer) =>
                       s.machineIdentifier === selectedServer.machineIdentifier,
                   )?.version ||
                     selectedServer.version ||
@@ -306,25 +300,27 @@ export const PlexSettings: React.FC = () => {
                   <Stack gap="xs">
                     {servers
                       .filter(
-                        (s: any) =>
+                        (s: PlexServer) =>
                           s.machineIdentifier === localSelectedServerId,
                       )
-                      .map((server: any) =>
-                        server.connections.map((conn: any, idx: number) => (
-                          <Group gap="xs" key={idx}>
-                            <Text
-                              size="sm"
-                              c={conn.available ? "brand" : "red"}
-                            >
-                              {conn.available ? "✓" : "✗"}
-                            </Text>
-                            <Text size="sm">
-                              {conn.uri}
-                              {conn.local && " (Local)"}
-                              {conn.latency && ` - ${conn.latency}ms`}
-                            </Text>
-                          </Group>
-                        )),
+                      .map((server: PlexServer) =>
+                        server.connections.map(
+                          (conn: PlexServerConnection, idx: number) => (
+                            <Group gap="xs" key={idx}>
+                              <Text
+                                size="sm"
+                                c={conn.available ? "brand" : "red"}
+                              >
+                                {conn.available ? "✓" : "✗"}
+                              </Text>
+                              <Text size="sm">
+                                {conn.uri}
+                                {conn.local && " (Local)"}
+                                {conn.latency && ` - ${conn.latency}ms`}
+                              </Text>
+                            </Group>
+                          ),
+                        ),
                       )}
                   </Stack>
                 </Card>

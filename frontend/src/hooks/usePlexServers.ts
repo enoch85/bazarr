@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import axios, { AxiosError } from "axios";
 
-interface PlexServerConnection {
+export interface PlexServerConnection {
   uri: string;
   protocol: string;
   address: string;
@@ -11,7 +11,7 @@ interface PlexServerConnection {
   latency?: number;
 }
 
-interface PlexServer {
+export interface PlexServer {
   name: string;
   machineIdentifier: string;
   connections: PlexServerConnection[];
