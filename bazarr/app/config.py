@@ -490,8 +490,17 @@ while failed_validator:
         failed_validator = False
     except ValidationError as e:
         current_validator_details = e.details[0][0]
+        logging.info(f"[Config Debug] Validator failed for {current_validator_details.names[0]}: {e}")
         if hasattr(current_validator_details, 'default') and current_validator_details.default is not empty:
+            old_value = settings.get(current_validator_details.names[0], 'undefined')
             settings[current_validator_details.names[0]] = current_validator_details.default
+            logging.info(f"[Config Debug] VALIDATOR RESET: {current_validator_details.names[0]} from '{old_value}' to '{current_validator_details.default}'")
+            
+            # Special logging for use_plex changes
+            if current_validator_details.names[0] == 'general.use_plex':
+                logging.warning(f"[Config Debug] *** CRITICAL: use_plex was reset by validator! Old: '{old_value}', New: '{current_validator_details.default}' ***")
+                import traceback
+                logging.warning(f"[Config Debug] Validator reset stack trace:\n{''.join(traceback.format_stack())}")
         else:
             logging.critical(f"Value for {current_validator_details.names[0]} doesn't pass validation and there's no "
                              f"default value. This issue must be reported to and fixed by the development team. "
@@ -501,6 +510,14 @@ while failed_validator:
 
 def write_config():
     logging.info(f"[Config Debug] write_config called - use_plex = {settings.general.use_plex}")
+    logging.info(f"[Config Debug] Plex auth_method = {settings.plex.get('auth_method', 'not set')}")
+    logging.info(f"[Config Debug] Plex token = {'SET' if settings.plex.get('token') else 'EMPTY'}")
+    
+    # Add stack trace to see WHO is calling write_config
+    import traceback
+    stack = ''.join(traceback.format_stack()[-3:-1])  # Get the 2 levels up in call stack
+    logging.info(f"[Config Debug] write_config called from:\n{stack}")
+    
     if settings.as_dict() == Dynaconf(
         settings_file=config_yaml_file,
         core_loaders=['YAML']
