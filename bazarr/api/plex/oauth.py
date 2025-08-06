@@ -254,15 +254,9 @@ class PlexPinCheck(Resource):
                 # Enable Plex integration when OAuth succeeds
                 settings.general.use_plex = True
                 
-                # Add debugging to track use_plex state
-                current_app.logger.info(f"[OAuth Debug] Before write_config: use_plex = {settings.general.use_plex}")
-                
                 # Ensure config is written before returning success
                 try:
                     write_config()
-                    
-                    # Check use_plex state after write_config
-                    current_app.logger.info(f"[OAuth Debug] After write_config: use_plex = {settings.general.use_plex}")
                     
                     # Clean up PIN only after successful config write
                     delete_cached_pin(pin_id)
@@ -472,13 +466,9 @@ class PlexLogout(Resource):
             settings.plex.server_url = ""
             settings.plex.server_local = False
             
-            # TODO: Auto-disable logic temporarily removed for testing
-            # if (settings.plex.ip == "127.0.0.1" and 
-            #     settings.plex.port == 32400 and 
-            #     settings.plex.apikey == "" and 
-            #     settings.plex.ssl == False):
-            #     current_app.logger.info("Auto-disabling Plex integration - manual config at defaults")
-            #     settings.general.use_plex = False
+            # Auto-disable Plex integration when disconnecting
+            # Since OAuth auto-enables Plex, disconnect should auto-disable it for consistency
+            settings.general.use_plex = False
             
             write_config()
 
