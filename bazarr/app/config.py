@@ -500,6 +500,7 @@ while failed_validator:
 
 
 def write_config():
+    logging.info(f"[Config Debug] write_config called - use_plex = {settings.general.use_plex}")
     if settings.as_dict() == Dynaconf(
         settings_file=config_yaml_file,
         core_loaders=['YAML']

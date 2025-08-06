@@ -251,9 +251,16 @@ class PlexPinCheck(Resource):
                 settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
                 
+                # Add debugging to track use_plex state
+                current_app.logger.info(f"[OAuth Debug] Before write_config: use_plex = {settings.general.use_plex}")
+                
                 # Ensure config is written before returning success
                 try:
                     write_config()
+                    
+                    # Check use_plex state after write_config
+                    current_app.logger.info(f"[OAuth Debug] After write_config: use_plex = {settings.general.use_plex}")
+                    
                     # Clean up PIN only after successful config write
                     delete_cached_pin(pin_id)
                     
