@@ -458,6 +458,7 @@ class PlexLogout(Resource):
                 settings.plex.port == 32400 and 
                 settings.plex.apikey == "" and 
                 settings.plex.ssl == False):
+                current_app.logger.info("Auto-disabling Plex integration - manual config at defaults")
                 settings.general.use_plex = False
             
             write_config()
