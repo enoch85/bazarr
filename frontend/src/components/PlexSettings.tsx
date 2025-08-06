@@ -15,9 +15,19 @@ import { useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import { usePlexOAuth } from "@/hooks/usePlexOAuth";
 import { usePlexServers } from "@/hooks/usePlexServers";
+import { useFormValues } from "@/pages/Settings/utilities/FormValues";
 
 export const PlexSettings: React.FC = () => {
   const queryClient = useQueryClient();
+  
+  // Access form context to reset staged changes after OAuth
+  let form: ReturnType<typeof useFormValues> | null = null;
+  try {
+    form = useFormValues();
+  } catch {
+    // Form context not available (PlexSettings used outside settings page)
+    form = null;
+  }
   
   const {
     isAuthenticated,
@@ -34,10 +44,17 @@ export const PlexSettings: React.FC = () => {
   } = usePlexOAuth({
     onAuthSuccess: () => {
       fetchServers();
-      // Invalidate settings cache to refresh manual config fields
+      // Invalidate all settings and system queries to ensure UI reflects OAuth changes
       queryClient.invalidateQueries({
-        queryKey: [QueryKeys.System, QueryKeys.Settings],
+        queryKey: [QueryKeys.System],
       });
+      
+      // Reset form to clear any staged changes since OAuth changes are already saved
+      if (form) {
+        setTimeout(() => {
+          form.reset();
+        }, 100);
+      }
     },
     onAuthError: () => {
       // Authentication failed
@@ -104,10 +121,17 @@ export const PlexSettings: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    // Invalidate settings cache to refresh all fields after logout
+    // Invalidate all system queries to refresh all settings after logout
     queryClient.invalidateQueries({
-      queryKey: [QueryKeys.System, QueryKeys.Settings],
+      queryKey: [QueryKeys.System],
     });
+    
+    // Reset form to clear any staged changes since logout changes are already saved
+    if (form) {
+      setTimeout(() => {
+        form.reset();
+      }, 100);
+    }
   };
 
   const renderAuthSection = () => {

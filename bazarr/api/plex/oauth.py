@@ -251,22 +251,32 @@ class PlexPinCheck(Resource):
                 settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
                 
+                # Ensure config is written before returning success
                 try:
                     write_config()
+                    # Clean up PIN only after successful config write
+                    delete_cached_pin(pin_id)
+                    
+                    return {
+                        'authenticated': True,
+                        'username': user_data.get('username'),
+                        'email': user_data.get('email')
+                        # Never send actual token to frontend
+                    }
                 except Exception as config_error:
-                    # Log the error but don't fail the authentication
+                    # If config write fails, clear the settings from memory and fail OAuth
                     current_app.logger.error(f"Failed to save OAuth settings: {config_error}")
-                    # Settings are still in memory, so OAuth will work until restart
+                    
+                    # Clear OAuth settings from memory since we couldn't persist them
+                    settings.plex.token = ""
+                    settings.plex.username = ""
+                    settings.plex.email = ""
+                    settings.plex.user_id = ""
+                    settings.plex.auth_method = 'apikey'
+                    
+                    # Return error to frontend
+                    raise PlexConnectionError("Failed to save authentication settings")
                 
-                # Clean up PIN
-                delete_cached_pin(pin_id)
-                
-                return {
-                    'authenticated': True,
-                    'username': user_data.get('username'),
-                    'email': user_data.get('email')
-                    # Never send actual token to frontend
-                }
             
             return {
                 'authenticated': False,
