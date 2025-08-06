@@ -59,7 +59,8 @@ export const usePlexOAuth = (options: UsePlexOAuthOptions = {}) => {
     try {
       const response = await axios.get("/api/plex/oauth/validate");
 
-      if (response.data.valid) {
+      // Only consider OAuth authenticated if auth_method is 'oauth'
+      if (response.data.valid && response.data.auth_method === 'oauth') {
         setAuthState({
           isAuthenticated: true,
           isLoading: false,

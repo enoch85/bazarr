@@ -241,7 +241,7 @@ validators = [
     Validator('plex.username', must_exist=True, default='', is_type_of=str),
     Validator('plex.email', must_exist=True, default='', is_type_of=str),
     Validator('plex.user_id', must_exist=True, default='', is_type_of=str),
-    Validator('plex.auth_method', must_exist=True, default='apikey', is_type_of=str, is_in=['apikey', 'oauth', 'token']),
+    Validator('plex.auth_method', must_exist=True, default='apikey', is_type_of=str, is_in=['apikey', 'oauth']),
     Validator('plex.encryption_key', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_machine_id', must_exist=True, default='', is_type_of=str),
     Validator('plex.server_name', must_exist=True, default='', is_type_of=str),
@@ -963,20 +963,9 @@ def sync_checker(subtitle):
 # Plex OAuth Migration Functions
 def migrate_plex_config():
     """
-    Migrate from old API key configuration to new OAuth-based configuration.
+    Clean up legacy Plex configuration.
     This function should be called during application startup.
     """
-    # Check if we need to migrate from old API key format
-    old_token = settings.plex.get('apikey')
-    if old_token and not settings.plex.get('token'):
-        logging.info("Migrating Plex configuration from API key to OAuth format")
-        
-        # Store the old API key as token for backward compatibility
-        settings.plex.token = old_token
-        settings.plex.auth_method = 'token'
-        
-        logging.info("Plex configuration migration completed")
-    
     # Generate encryption key if not exists
     if not settings.plex.get('encryption_key'):
         logging.info("Generating new encryption key for Plex token storage")
@@ -984,6 +973,7 @@ def migrate_plex_config():
         key = Fernet.generate_key().decode()
         settings.plex.encryption_key = key
         write_config()
+        logging.info("Plex encryption key generated")
 
 
 def initialize_plex():

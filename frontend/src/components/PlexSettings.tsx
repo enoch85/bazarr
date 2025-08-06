@@ -30,6 +30,8 @@ export const PlexSettings: React.FC = () => {
   } = usePlexOAuth({
     onAuthSuccess: () => {
       fetchServers();
+      // Refresh page to reload settings after OAuth success
+      window.location.reload();
     },
     onAuthError: () => {
       // Authentication failed
@@ -92,6 +94,12 @@ export const PlexSettings: React.FC = () => {
     } finally {
       setIsSelectingServer(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    // Refresh page to reload settings after logout
+    window.location.reload();
   };
 
   const renderAuthSection = () => {
@@ -170,7 +178,7 @@ export const PlexSettings: React.FC = () => {
             Connected as {username} ({email})
           </Alert>
           <Button
-            onClick={logout}
+            onClick={handleLogout}
             variant="light"
             color="gray"
             size="sm"

@@ -238,6 +238,13 @@ class PlexPinCheck(Resource):
                 user_id = user_data.get('id')
                 user_id_str = str(user_id) if user_id is not None else ''
                 
+                # Clear ALL legacy manual configuration when switching to OAuth
+                settings.plex.apikey = ""  # Clear manual API key
+                settings.plex.ip = "127.0.0.1"  # Reset manual IP to default
+                settings.plex.port = 32400  # Reset to default port
+                settings.plex.ssl = False  # Reset SSL setting
+                
+                # Set OAuth configuration
                 settings.plex.token = encrypted_token
                 settings.plex.username = user_data.get('username') or ''
                 settings.plex.email = user_data.get('email') or ''
@@ -274,26 +281,37 @@ class PlexValidate(Resource):
     def get(self):
         """Validate current Plex token."""
         try:
-            # Since Bazarr uses global settings, check the global token
-            token = settings.plex.get('token')
-            if not token:
-                return {
-                    'valid': False,
-                    'error': 'No token found',
-                    'code': 'NO_TOKEN'
-                }, 200
+            # Only two authentication methods: apikey (manual) or oauth
+            auth_method = settings.plex.get('auth_method', 'apikey')
             
-            decrypted_token = decrypt_token(token)
+            if auth_method == 'oauth':
+                # OAuth: encrypted token
+                token = settings.plex.get('token')
+                if not token:
+                    return {
+                        'valid': False,
+                        'auth_method': 'oauth'
+                    }, 200
+                decrypted_token = decrypt_token(token)
+                
+            else:
+                # Manual/Legacy: API key (default)
+                token = settings.plex.get('apikey')
+                if not token:
+                    return {
+                        'valid': False,
+                        'auth_method': 'apikey'
+                    }, 200
+                decrypted_token = token  # API keys aren't encrypted
             
-            # Check if token needs refresh (older than 24 hours)
-            # Note: Bazarr doesn't have token_updated field by default
-            # This is a simplified version
+            # Validate token with Plex
             user_data = validate_plex_token(decrypted_token)
             
             return {
                 'valid': True,
                 'username': user_data.get('username'),
-                'email': user_data.get('email')
+                'email': user_data.get('email'),
+                'auth_method': auth_method
             }
         except PlexAuthError as e:
             return {
@@ -307,12 +325,22 @@ class PlexServers(Resource):
     def get(self):
         """Get Plex servers."""
         try:
-            # Get stored token
-            token = settings.plex.get('token')
-            if not token:
-                raise UnauthorizedError()
+            # Only two authentication methods: apikey (manual) or oauth
+            auth_method = settings.plex.get('auth_method', 'apikey')
             
-            decrypted_token = decrypt_token(token)
+            if auth_method == 'oauth':
+                # OAuth: encrypted token
+                token = settings.plex.get('token')
+                if not token:
+                    raise UnauthorizedError()
+                decrypted_token = decrypt_token(token)
+                
+            else:
+                # Manual/Legacy: API key (default)
+                token = settings.plex.get('apikey')
+                if not token:
+                    raise UnauthorizedError()
+                decrypted_token = token  # API keys aren't encrypted
             
             headers = {
                 'X-Plex-Token': decrypted_token,
@@ -405,16 +433,26 @@ class PlexServers(Resource):
 @api_ns_plex.route('plex/oauth/logout')
 class PlexLogout(Resource):
     def post(self):
-        """Clear Plex authentication."""
+        """Complete Plex disconnect - clear ALL authentication and server settings."""
         try:
-            # Clear global Plex settings
-            settings.plex.token = None
-            settings.plex.username = None
-            settings.plex.email = None
-            settings.plex.user_id = None
+            # Clear ALL Plex authentication settings for complete reset
+            settings.plex.token = ""  # Clear OAuth token
+            settings.plex.apikey = ""  # Clear manual API key
+            settings.plex.ip = "127.0.0.1"  # Reset IP to default
+            settings.plex.port = 32400  # Reset port to default
+            settings.plex.ssl = False  # Reset SSL to default
+            settings.plex.username = ""  # Clear user info
+            settings.plex.email = ""  # Clear user info
+            settings.plex.user_id = ""  # Clear user info
             settings.plex.auth_method = 'apikey'  # Reset to default
-            write_config()
             
+            # Clear server selection as well for complete reset
+            settings.plex.server_machine_id = ""
+            settings.plex.server_name = ""
+            settings.plex.server_url = ""
+            settings.plex.server_local = False
+            
+            write_config()
 
             return {'success': True}
         except Exception as e:
@@ -431,13 +469,22 @@ class PlexTestConnection(Resource):
         if not uri:
             raise PlexAuthError('Missing URI', 'MISSING_PARAMETER')
         
-        # Get stored token
-        token = settings.plex.get('token')
-        if not token:
-            raise UnauthorizedError()
+        # Only two authentication methods: apikey (manual) or oauth
+        auth_method = settings.plex.get('auth_method', 'apikey')
         
-        # Decrypt token
-        decrypted_token = decrypt_token(token)
+        if auth_method == 'oauth':
+            # OAuth: encrypted token
+            token = settings.plex.get('token')
+            if not token:
+                raise UnauthorizedError()
+            decrypted_token = decrypt_token(token)
+            
+        else:
+            # Manual/Legacy: API key (default)
+            token = settings.plex.get('apikey')
+            if not token:
+                raise UnauthorizedError()
+            decrypted_token = token  # API keys aren't encrypted
         
         try:
             # Test connection with a simple identity request
