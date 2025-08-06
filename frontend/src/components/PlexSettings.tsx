@@ -30,8 +30,7 @@ export const PlexSettings: React.FC = () => {
   } = usePlexOAuth({
     onAuthSuccess: () => {
       fetchServers();
-      // Refresh page to reload settings after OAuth success
-      window.location.reload();
+      // No automatic refresh - let user save settings manually
     },
     onAuthError: () => {
       // Authentication failed
