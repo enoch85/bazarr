@@ -452,6 +452,14 @@ class PlexLogout(Resource):
             settings.plex.server_url = ""
             settings.plex.server_local = False
             
+            # Auto-disable Plex integration if manual config is at defaults
+            # (no point having Plex enabled with default/empty manual config)
+            if (settings.plex.ip == "127.0.0.1" and 
+                settings.plex.port == 32400 and 
+                settings.plex.apikey == "" and 
+                settings.plex.ssl == False):
+                settings.general.use_plex = False
+            
             write_config()
 
             return {'success': True}
