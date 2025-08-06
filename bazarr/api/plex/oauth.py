@@ -251,6 +251,9 @@ class PlexPinCheck(Resource):
                 settings.plex.user_id = user_id_str
                 settings.plex.auth_method = 'oauth'
                 
+                # Enable Plex integration when OAuth succeeds
+                settings.general.use_plex = True
+                
                 # Add debugging to track use_plex state
                 current_app.logger.info(f"[OAuth Debug] Before write_config: use_plex = {settings.general.use_plex}")
                 
