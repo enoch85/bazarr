@@ -61,8 +61,8 @@ const SettingsPlexView: FunctionComponent = () => {
                 <Paper p="lg" mt="sm" radius="md" withBorder>
                   <Stack gap="md">
                     <Alert color="brand" variant="light">
-                      This manual configuration is not needed when using Plex
-                      OAuth above.
+                      This legacy manual configuration is not needed when using
+                      Plex OAuth above.
                     </Alert>
 
                     <Group grow>
