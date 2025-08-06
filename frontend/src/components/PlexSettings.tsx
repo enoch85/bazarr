@@ -11,10 +11,14 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/apis/queries/keys";
 import { usePlexOAuth } from "@/hooks/usePlexOAuth";
 import { usePlexServers } from "@/hooks/usePlexServers";
 
 export const PlexSettings: React.FC = () => {
+  const queryClient = useQueryClient();
+  
   const {
     isAuthenticated,
     isLoading: authLoading,
@@ -30,7 +34,10 @@ export const PlexSettings: React.FC = () => {
   } = usePlexOAuth({
     onAuthSuccess: () => {
       fetchServers();
-      // No automatic refresh - let user save settings manually
+      // Invalidate settings cache to refresh manual config fields
+      queryClient.invalidateQueries({
+        queryKey: [QueryKeys.System, QueryKeys.Settings],
+      });
     },
     onAuthError: () => {
       // Authentication failed
@@ -97,8 +104,10 @@ export const PlexSettings: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    // Refresh page to reload settings after logout
-    window.location.reload();
+    // Invalidate settings cache to refresh all fields after logout
+    queryClient.invalidateQueries({
+      queryKey: [QueryKeys.System, QueryKeys.Settings],
+    });
   };
 
   const renderAuthSection = () => {
