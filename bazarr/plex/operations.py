@@ -13,9 +13,42 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 def get_plex_server() -> PlexServer:
     """Connect to the Plex server and return the server instance."""
     try:
-        protocol = "https://" if settings.plex.ssl else "http://"
-        baseurl = f"{protocol}{settings.plex.ip}:{settings.plex.port}"
-        return PlexServer(baseurl, settings.plex.apikey)
+        auth_method = settings.plex.get('auth_method', 'apikey')
+        
+        if auth_method == 'oauth':
+            # OAuth authentication - use encrypted token and configured server URL
+            from bazarr.api.plex.security import TokenManager
+            from cryptography.fernet import Fernet
+            
+            encrypted_token = settings.plex.get('token')
+            if not encrypted_token:
+                raise ValueError("OAuth token not found. Please re-authenticate with Plex.")
+            
+            # Decrypt the token
+            encryption_key = settings.plex.get('encryption_key')
+            if not encryption_key:
+                raise ValueError("Encryption key not found. Please re-authenticate with Plex.")
+            
+            token_manager = TokenManager(encryption_key)
+            decrypted_token = token_manager.decrypt(encrypted_token)
+            
+            # Use configured OAuth server URL
+            server_url = settings.plex.get('server_url')
+            if not server_url:
+                raise ValueError("Server URL not configured. Please select a Plex server.")
+            
+            return PlexServer(server_url, decrypted_token)
+        else:
+            # Manual/API key authentication (legacy method)
+            protocol = "https://" if settings.plex.ssl else "http://"
+            baseurl = f"{protocol}{settings.plex.ip}:{settings.plex.port}"
+            apikey = settings.plex.apikey
+            
+            if not apikey:
+                raise ValueError("API key not configured. Please configure Plex authentication.")
+            
+            return PlexServer(baseurl, apikey)
+            
     except Exception as e:
         logger.error(f"Failed to connect to Plex server: {e}")
         raise
